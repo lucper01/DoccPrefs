@@ -1,0 +1,13 @@
+lassList.remove("open");settingsModal.setAttribute("aria-hidden","true")}
+document.getElementById("fontDown").addEventListener("click",()=>{appState.settings.font=Math.max(14,appState.settings.font-1);applySettings();saveApp()});document.getElementById("fontUp").addEventListener("click",()=>{appState.settings.font=Math.min(20,appState.settings.font+1);applySettings();saveApp()});document.getElementById("contrastSwitch").addEventListener("click",()=>{appState.settings.contrast=!appState.settings.contrast;applySettings();saveApp()});document.getElementById("motionSwitch").addEventListener("click",()=>{appState.settings.motion=!appState.settings.motion;applySettings();saveApp()});
+function applySettings(){document.documentElement.style.setProperty("--fs",`${appState.settings.font}px`);document.body.classList.toggle("high-contrast",!!appState.settings.contrast);document.body.classList.toggle("reduce-motion",!!appState.settings.motion);document.getElementById("contrastSwitch")?.classList.toggle("on",!!appState.settings.contrast);document.getElementById("motionSwitch")?.classList.toggle("on",!!appState.settings.motion);}
+function escapeHtml(s){return String(s??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));}
+function formatDate(v){if(!v)return "date inconnue";try{return new Intl.DateTimeFormat("fr-FR",{dateStyle:"short",timeStyle:"short"}).format(new Date(v));}catch(e){return v;}}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800);}
+window.addEventListener("resize",()=>{if(!document.getElementById("resultsContent").hidden&&participant())renderResults()});
+
+loadState();const rosterAdded=applyRosterFromUrl();renderDomains();updateParticipantUI();updateGlobalProgress();updateDataPage();if(participant())renderQuestion();if(rosterAdded)toast(`${rosterAdded} nom(s) chargé(s) depuis le lien équipe`);
+
+</script>
+</body>
+</html>
