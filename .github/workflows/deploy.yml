@@ -1,0 +1,79 @@
+name: Assemble and deploy Gouts 100
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .deploy/READY
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: gouts100-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Assemble single-file application
+        shell: bash
+        run: |
+          cat \
+            .deploy/plain.part00 \
+            .deploy/plain.part01 \
+            .deploy/plain.part02 \
+            .deploy/plain.part03 \
+            .deploy/plain.part04 \
+            .deploy/plain.part05 \
+            .deploy/plain.part06 \
+            .deploy/plain.part07 \
+            > index.html
+
+          EXPECTED="0b56d5a90ab1b60d941063391a231b908ea9116a"
+          ACTUAL="$(git hash-object index.html)"
+          echo "Expected blob: $EXPECTED"
+          echo "Actual blob:   $ACTUAL"
+          test "$ACTUAL" = "$EXPECTED"
+
+      - name: Commit clean application tree
+        shell: bash
+        run: |
+          rm -rf .deploy
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git add -u
+          git commit -m "Deploy Gouts 100 single-file app"
+          git push
+
+      - name: Prepare Pages artifact
+        shell: bash
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
