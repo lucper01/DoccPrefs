@@ -1,0 +1,135 @@
+    <p class="lead" style="font-size:1rem">Les résultats deviennent disponibles à partir de 20 réponses et sont plus interprétables lorsque les 100 questions sont complétées.</p>
+          <button class="primary" onclick="goToPage('quiz')">Aller au test</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="data">
+      <div class="shell">
+        <div class="eyebrow">Collecte</div>
+        <h2>Participants et données</h2>
+        <p class="lead">Cette page sert de point de collecte local. Les sessions créées dans ce navigateur sont conservées séparément par participant. Les fichiers exportés par les collègues peuvent ensuite être importés ici pour constituer un corpus commun.</p>
+
+        <div class="info-banner">
+          GitHub Pages est un hébergement statique : les réponses d'un collègue utilisant son propre appareil ne peuvent pas apparaître automatiquement dans ton navigateur. Le flux prévu est donc : sélection du nom, passation, export individuel JSON, puis import de ces fichiers dans cette page. Aucune donnée n'est envoyée vers un serveur.
+        </div>
+
+        <div class="dataset-stats">
+          <div class="stat"><b id="statLocal">0</b><span>sessions locales</span></div>
+          <div class="stat"><b id="statImported">0</b><span>fichiers importés</span></div>
+          <div class="stat"><b id="statComplete">0</b><span>tests complets</span></div>
+          <div class="stat"><b id="statTotalAnswers">0</b><span>réponses cumulées</span></div>
+        </div>
+
+        <div class="data-toolbar">
+          <button class="primary" id="exportWideBtn">Exporter le corpus CSV</button>
+          <button class="secondary" id="exportLongBtn">CSV format long</button>
+          <button class="secondary" id="exportCorpusJsonBtn">Corpus JSON</button>
+          <button class="ghost" id="bulkNamesBtn">Ajouter plusieurs noms</button>
+          <button class="ghost" id="shareRosterBtn">Copier le lien équipe</button>
+        </div>
+
+        <div class="data-grid">
+          <div class="card result-card">
+            <h3>Sessions de ce navigateur</h3>
+            <p class="note" style="margin-top:0">Chaque nom possède sa propre progression et peut reprendre le test ultérieurement.</p>
+            <div class="data-list" id="localParticipantRows"></div>
+          </div>
+          <div class="card result-card">
+            <h3>Importer les collègues</h3>
+            <p class="note" style="margin-top:0">Sélectionner un ou plusieurs fichiers JSON générés par le bouton « Exporter mes résultats ».</p>
+            <input id="importFiles" type="file" accept="application/json,.json" multiple hidden>
+            <div class="file-drop" id="fileDrop">Cliquer ici pour importer plusieurs fichiers JSON</div>
+            <div class="data-list" id="importedParticipantRows"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="about">
+      <div class="shell">
+        <div class="eyebrow">À propos</div>
+        <h2>Un test de préférences, pas une étiquette.</h2>
+        <p class="lead">L'objectif est de produire une synthèse lisible de goûts déclarés dans des domaines très différents, puis d'identifier les tendances qui reviennent d'un domaine à l'autre.</p>
+        <div class="about-grid">
+          <div class="card">
+            <h3>Confidentialité</h3>
+            <p class="note">Toutes les réponses sont enregistrées dans le stockage local du navigateur. Aucun compte, serveur, cookie publicitaire ou service externe n'est utilisé. Les données ne quittent l'appareil que lorsque l'utilisateur exporte volontairement un fichier.</p>
+          </div>
+          <div class="card">
+            <h3>Interprétation</h3>
+            <p class="note">Les scores ne doivent pas être interprétés comme des traits psychologiques stables. Ils reflètent une sélection de préférences à un moment donné et peuvent varier avec le contexte.</p>
+          </div>
+          <div class="card">
+            <h3>Échelle</h3>
+            <p class="note">Chaque affirmation est évaluée de 1 - "Pas du tout" à 5 - "Énormément". Certaines affirmations pointent vers des pôles opposés afin d'éviter qu'un score élevé soit systématiquement associé au même style de réponse.</p>
+          </div>
+          <div class="card">
+            <h3>Résultat</h3>
+            <p class="note">Le profil final combine les axes les plus saillants, les domaines les plus appréciés et les réponses extrêmes. Il s'agit d'une description dynamique et non d'une catégorie fermée.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="participantModal" aria-hidden="true">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><div class="eyebrow">Participant</div><h3 style="margin-top:5px">Ajouter un nom</h3></div>
+      <button class="icon-btn" id="closeParticipantModal">×</button>
+    </div>
+    <div class="field" style="margin-top:18px">
+      <label for="participantNameInput">Nom ou pseudonyme</label>
+      <input id="participantNameInput" maxlength="80" autocomplete="off" placeholder="Ex. Camille">
+      <div class="note" style="margin-top:8px">Le nom est uniquement enregistré dans ce navigateur et dans les fichiers exportés.</div>
+    </div>
+    <div class="actions-row">
+      <button class="primary" id="saveParticipantBtn">Créer et sélectionner</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="bulkNamesModal" aria-hidden="true">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><div class="eyebrow">Répertoire</div><h3 style="margin-top:5px">Ajouter plusieurs noms</h3></div>
+      <button class="icon-btn" id="closeBulkNamesModal">×</button>
+    </div>
+    <div class="field" style="margin-top:18px">
+      <label for="bulkNamesInput">Un nom par ligne</label>
+      <textarea id="bulkNamesInput" rows="9" placeholder="Camille\nAlex\nMorgan"></textarea>
+      <div class="note" style="margin-top:8px">Les noms ajoutés apparaîtront ensuite dans le sélecteur de participants de ce navigateur.</div>
+    </div>
+    <div class="actions-row">
+      <button class="primary" id="saveBulkNamesBtn">Ajouter la liste</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="settingsModal" aria-hidden="true">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><div class="eyebrow">Interface</div><h3 style="margin-top:5px">Personnalisation</h3></div>
+      <button class="icon-btn" id="closeSettings">×</button>
+    </div>
+    <div class="setting">
+      <div><strong>Taille du texte</strong><div class="note" style="margin:3px 0 0">Ajuster l'échelle générale.</div></div>
+      <div class="font-controls"><button id="fontDown">A-</button><button id="fontUp">A+</button></div>
+    </div>
+    <div class="setting">
+      <div><strong>Contraste renforcé</strong><div class="note" style="margin:3px 0 0">Noir plus profond et séparateurs plus visibles.</div></div>
+      <button class="switch" id="contrastSwitch"><i></i></button>
+    </div>
+    <div class="setting">
+      <div><strong>Réduire les animations</strong><div class="note" style="margin:3px 0 0">Désactive les transitions de l'interface.</div></div>
+      <button class="switch" id="motionSwitch"><i></i></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const QUESTIONS = [{"id":1,"domain":"Alimentation","text":"Je préfère découvrir un plat inconnu plutôt que reprendre une valeur sûre.","traits":{"novelty":1,"sensory":0.4}},{"id":2,"domain":"Alimentation","text":"Les saveurs très épicées ou très marquées m'attirent.","traits":{"intensity":1,"sensory":0.8}},{"id":3,"domain":"Alimentation","text":"J'aime les repas simples, familiers et réconfortants.","traits":{"novelty":-1,"intensity":-0.4}},{"id":4,"domain":"Alimentation","text":"La présentation visuelle d'un plat compte presque autant que son goût.","traits":{"aesthetic":1,"sensory":0.4}},{"id":5,"domain":"Alimentation","text":"J'aime prendre le temps de comparer les textures, les arômes et les nuances d'un plat.","traits":{"sensory":1,"energy":-0.3}},{"id":6,"domain":"Alimentation","text":"Je préfère les repas conviviaux à plusieurs aux repas pris seul.","traits":{"social":1}},{"id":7,"domain":"Alimentation","text":"Les marchés, produits locaux et aliments de saison m'attirent.","traits":{"nature":1,"digital":-0.2}},{"id":8,"domain":"Alimentation","text":"J'apprécie la cuisine très codifiée, précise et technique.","traits":{"structure":1,"aesthetic":0.5}},{"id":9,"domain":"Alimentation","text":"Je suis attiré par les adresses confidentielles ou les cuisines peu connues.","traits":{"culture":1,"novelty":0.6}},{"id":10,"domain":"Alimentation","text":"Je préfère improviser avec ce qu'il y a plutôt que suivre une recette à la lettre.","traits":{"structure":-1,"creativity":1}},{"id":11,"domain":"Musique","text":"J'aime découvrir régulièrement de nouveaux artistes ou genres musicaux.","traits":{"novelty":1,"culture":0.5}},{"id":12,"domain":"Musique","text":"Je suis attiré par les morceaux puissants, denses ou très énergiques.","traits":{"intensity":1,"energy":1}},{"id":13,"domain":"Musique","text":"J'aime les musiques calmes, aérées ou minimalistes.","traits":{"energy":-1,"intensity":-0.5}},{"id":14,"domain":"Musique","text":"Je prête beaucoup d'attention à la production, aux timbres et aux détails sonores.","traits":{"sensory":1,"aesthetic":0.4}},{"id":15,"domain":"Musique","text":"J'apprécie les structures musicales complexes ou inattendues.","traits":{"structure":0.5,"novelty":0.6,"culture":0.4}},{"id":16,"domain":"Musique","text":"Un bon refrain immédiatement mémorisable est un vrai plus.","traits":{"culture":-1,"structure":0.3}},{"id":17,"domain":"Musique","text":"Je préfère écouter un album entier plutôt qu'une succession de morceaux isolés.","traits":{"structure":1,"energy":-0.2}},{"id":18,"domain":"Musique","text":"Les concerts et festivals font partie de mes manières préférées de vivre la musique.","traits":{"social":1,"energy":0.8}},{"id":19,"domain":"Musique","text":"J'aime chercher des artistes peu connus plutôt que rester sur les classements populaires.","traits":{"culture":1,"novelty":0.5}},{"id":20,"domain":"Musique","text":"J'aime créer des playlists très organisées selon une ambiance ou une activité.","traits":{"structure":1,"aesthetic":0.3}},{"id":21,"domain":"Cinéma & séries","text":"Je préfère un film qui me surprend à un film qui suit des codes familiers.","traits":{"novelty":1,"culture":0.4}},{"id
