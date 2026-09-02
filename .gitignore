@@ -1,0 +1,24 @@
+# Fichiers système
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Éditeurs et IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Fichiers temporaires et journaux
+*.tmp
+*.temp
+*.log
+
+# Archives et exports locaux du test
+gouts100_*.json
+gouts100_*.csv
+*.zip
+
+# Sauvegardes locales éventuelles
+*.bak
