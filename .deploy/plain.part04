@@ -1,0 +1,167 @@
+lle d'une interface.","traits":{"aesthetic":1,"digital":0.5}},{"id":88,"domain":"Technologie & usages","text":"J'aime comprendre comment fonctionne un outil plutôt que seulement l'utiliser.","traits":{"structure":1,"novelty":0.3}},{"id":89,"domain":"Technologie & usages","text":"Je préfère centraliser mes outils dans un système bien organisé.","traits":{"structure":1,"digital":0.6}},{"id":90,"domain":"Technologie & usages","text":"Je peux abandonner un outil performant si son ergonomie est mauvaise.","traits":{"aesthetic":0.7,"digital":0.3}},{"id":91,"domain":"Curiosité & expériences","text":"J'aime volontairement me confronter à des expériences nouvelles ou inhabituelles.","traits":{"novelty":1,"intensity":0.4}},{"id":92,"domain":"Curiosité & expériences","text":"Les sensations fortes peuvent être un vrai moteur de plaisir.","traits":{"intensity":1,"energy":1}},{"id":93,"domain":"Curiosité & expériences","text":"Je préfère généralement une ambiance douce à une stimulation très forte.","traits":{"intensity":-1,"energy":-0.6}},{"id":94,"domain":"Curiosité & expériences","text":"Je remarque facilement les odeurs, textures, lumières ou sons d'un environnement.","traits":{"sensory":1}},{"id":95,"domain":"Curiosité & expériences","text":"J'aime comparer mes impressions et mettre des mots précis sur ce que je ressens.","traits":{"sensory":0.8,"structure":0.5}},{"id":96,"domain":"Curiosité & expériences","text":"J'aime les activités créatives où il n'existe pas une seule bonne manière de faire.","traits":{"creativity":1,"structure":-1}},{"id":97,"domain":"Curiosité & expériences","text":"Je suis attiré par les expériences qui mélangent plusieurs sens ou médias.","traits":{"sensory":1,"novelty":0.7}},{"id":98,"domain":"Curiosité & expériences","text":"Je préfère savoir à quoi m'attendre avant de commencer une nouvelle activité.","traits":{"novelty":-1,"structure":1}},{"id":99,"domain":"Curiosité & expériences","text":"Je peux apprécier quelque chose précisément parce que c'est étrange, décalé ou déroutant.","traits":{"novelty":1,"culture":0.8}},{"id":100,"domain":"Curiosité & expériences","text":"J'aime construire des univers, concepts, projets ou collections très personnels.","traits":{"creativity":1,"aesthetic":0.5,"structure":0.3}}];
+
+const AXES = {
+  novelty:{name:"Nouveauté", left:"Repères", right:"Exploration"},
+  intensity:{name:"Intensité", left:"Douceur", right:"Intensité"},
+  structure:{name:"Structure", left:"Improvisation", right:"Structure"},
+  social:{name:"Sociabilité", left:"Solo", right:"Collectif"},
+  nature:{name:"Environnement", left:"Urbain", right:"Nature"},
+  aesthetic:{name:"Esthétique", left:"Fonction", right:"Esthétique"},
+  digital:{name:"Technologie", left:"Analogique", right:"Numérique"},
+  energy:{name:"Rythme", left:"Calme", right:"Énergie"},
+  culture:{name:"Culture", left:"Populaire", right:"Niche"},
+  sensory:{name:"Sensorialité", left:"Épuré", right:"Sensoriel"},
+  creativity:{name:"Créativité", left:"Cadre", right:"Création"}
+};
+
+const domains = [...new Set(QUESTIONS.map(q => q.domain))];
+const APP_KEY = "gouts100_app_v2";
+const LEGACY_KEY = "gouts100_state_v1";
+
+// Optionnel : préremplir ici les noms affichés dans la liste sur une nouvelle installation.
+// Exemple : const PRESET_PARTICIPANTS = ["Alice", "Bob", "Camille"];
+const PRESET_PARTICIPANTS = [];
+
+let appState = {
+  activeParticipantId:null,
+  participants:{},
+  imported:{},
+  settings:{font:16,contrast:false,motion:false}
+};
+
+function uid(){
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return "p_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,10);
+}
+function isoNow(){ return new Date().toISOString(); }
+function safeName(s){ return String(s||"").trim().replace(/\s+/g," "); }
+function fileSafe(s){ return safeName(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9_-]+/g,"_").replace(/^_+|_+$/g,"") || "participant"; }
+
+function newParticipant(name){
+  const id=uid(), now=isoNow();
+  return {id,name:safeName(name),createdAt:now,updatedAt:now,firstAnsweredAt:null,completedAt:null,current:0,answers:{}};
+}
+function participant(){ return appState.activeParticipantId ? appState.participants[appState.activeParticipantId] || null : null; }
+function answeredCount(p=participant()){ return p ? Object.keys(p.answers||{}).filter(k=>p.answers[k]!=null).length : 0; }
+
+function loadState(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(APP_KEY));
+    if(saved) appState={...appState,...saved,settings:{...appState.settings,...(saved.settings||{})},participants:saved.participants||{},imported:saved.imported||{}};
+  }catch(e){}
+
+  // Migration douce de la première version mono-participant.
+  if(!Object.keys(appState.participants).length){
+    try{
+      const old=JSON.parse(localStorage.getItem(LEGACY_KEY));
+      if(old && old.answers && Object.keys(old.answers).length){
+        const p=newParticipant("Session précédente");
+        p.current=old.current||0; p.answers=old.answers||{}; p.updatedAt=isoNow();
+        appState.participants[p.id]=p; appState.activeParticipantId=p.id;
+      }
+    }catch(e){}
+  }
+  // Ajout des noms prédéfinis sans modifier les sessions déjà existantes.
+  PRESET_PARTICIPANTS.map(safeName).filter(Boolean).forEach(name=>{
+    if(!Object.values(appState.participants).some(p=>p.name.toLocaleLowerCase()===name.toLocaleLowerCase())){
+      const p=newParticipant(name); appState.participants[p.id]=p;
+    }
+  });
+  applySettings();
+  saveApp(false);
+}
+function saveApp(refresh=true){
+  localStorage.setItem(APP_KEY,JSON.stringify(appState));
+  if(refresh){ updateParticipantUI(); updateGlobalProgress(); updateDataPage(); }
+}
+
+function addParticipant(name,selectIt=true){
+  name=safeName(name);
+  if(!name) return null;
+  const existing=Object.values(appState.participants).find(p=>p.name.toLocaleLowerCase()===name.toLocaleLowerCase());
+  if(existing){ if(selectIt) appState.activeParticipantId=existing.id; saveApp(); return existing; }
+  const p=newParticipant(name); appState.participants[p.id]=p;
+  if(selectIt) appState.activeParticipantId=p.id;
+  saveApp(); return p;
+}
+function selectParticipant(id){
+  if(!appState.participants[id]) return;
+  appState.activeParticipantId=id; saveApp(); renderQuestion(); renderResults();
+}
+function requireParticipant(){
+  if(participant()) return true;
+  openParticipantModal(); toast("Sélectionnez ou ajoutez un nom");
+  return false;
+}
+
+function goToPage(id){
+  if((id==="quiz" || id==="results") && !participant()){
+    goToPage("home"); openParticipantModal(); return;
+  }
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));
+  if(id==="quiz") renderQuestion();
+  if(id==="results") renderResults();
+  if(id==="data") updateDataPage();
+  window.scrollTo({top:0,behavior:appState.settings.motion?"auto":"smooth"});
+}
+
+document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>goToPage(b.dataset.page)));
+
+function renderDomains(){
+  document.getElementById("domainList").innerHTML=domains.map((d,i)=>`<div class="domain-pill">${String(i+1).padStart(2,"0")} - ${d}</div>`).join("");
+  document.getElementById("sectionProgress").innerHTML=domains.map((d,i)=>`<div class="section-seg" title="${d}"><span id="seg${i}"></span></div>`).join("");
+}
+
+function updateParticipantUI(){
+  const select=document.getElementById("participantSelect");
+  if(!select) return;
+  const list=Object.values(appState.participants).sort((a,b)=>a.name.localeCompare(b.name,"fr",{sensitivity:"base"}));
+  select.innerHTML='<option value="">Sélectionner un nom</option>'+list.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join("");
+  select.value=participant()?.id||"";
+  const p=participant(), n=answeredCount(p);
+  document.getElementById("participantCurrent").innerHTML=p ? `<b>${escapeHtml(p.name)}</b> - ${n}/100 réponses enregistrées` : "Aucun participant sélectionné.";
+  document.getElementById("continueBtn").style.display=p && n ? "inline-block":"none";
+  document.getElementById("startBtn").textContent=p && n ? "Recommencer avec ce nom" : "Commencer les 100 questions";
+  document.getElementById("quizParticipantName").textContent=p?.name||"participant";
+}
+
+document.getElementById("participantSelect").addEventListener("change",e=>{
+  if(e.target.value) selectParticipant(e.target.value); else {appState.activeParticipantId=null;saveApp();}
+});
+
+function renderQuestion(){
+  const p=participant(); if(!p) return;
+  p.current=Math.max(0,Math.min(QUESTIONS.length-1,Number(p.current)||0));
+  const q=QUESTIONS[p.current];
+  document.getElementById("domainBadge").textContent=q.domain;
+  document.getElementById("qNumber").textContent=`Question ${String(q.id).padStart(2,"0")}`;
+  document.getElementById("questionText").textContent=q.text;
+  document.getElementById("quizCount").textContent=`Question ${q.id} / ${QUESTIONS.length}`;
+  document.getElementById("quizParticipantName").textContent=p.name;
+  document.querySelectorAll(".choice").forEach(btn=>btn.classList.toggle("selected",Number(btn.dataset.value)===p.answers[q.id]));
+  document.getElementById("prevBtn").disabled=p.current===0;
+  document.getElementById("nextBtn").textContent=p.current===QUESTIONS.length-1?"Voir mes résultats":"Suivante";
+  updateSectionProgress();
+}
+
+function answer(value){
+  const p=participant(); if(!p) return;
+  const q=QUESTIONS[p.current];
+  if(!p.firstAnsweredAt) p.firstAnsweredAt=isoNow();
+  p.answers[q.id]=value; p.updatedAt=isoNow();
+  if(answeredCount(p)===100 && !p.completedAt) p.completedAt=isoNow();
+  saveApp(); renderQuestion();
+  if(p.current<QUESTIONS.length-1){
+    setTimeout(()=>{p.current++;p.updatedAt=isoNow();saveApp();renderQuestion();},appState.settings.motion?0:120);
+  }else{ renderResults();goToPage("results"); }
+}
+
+document.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>answer(Number(btn.dataset.value))));
+document.getElementById("prevBtn").addEventListener("click",()=>{const p=participant();if(p&&p.current>0){p.current--;p.updatedAt=isoNow();saveApp();renderQuestion();}});
+document.getElementById("nextBtn").addEventListener("click",()=>{
+  const p=participant(); if(!p)return;
+  if(p.current===QUESTIONS.length-1){renderResults();goToPage("results");}
+  else{p.current++;p.updatedAt=isoNow();saveApp();renderQuestion();}
+});
+document.getElementById("skipBtn").addEventList
