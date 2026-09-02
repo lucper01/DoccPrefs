@@ -1,0 +1,129 @@
+ener("click",()=>{
+  const p=participant();if(!p)return;
+  delete p.answers[QUESTIONS[p.current].id]; if(p.current<QUESTIONS.length-1)p.current++; p.updatedAt=isoNow();saveApp();renderQuestion();
+});
+
+document.addEventListener("keydown",e=>{
+  if(!document.getElementById("quiz").classList.contains("active"))return;
+  const p=participant();if(!p)return;
+  if(["1","2","3","4","5"].includes(e.key))answer(Number(e.key));
+  if(e.key==="ArrowLeft"&&p.current>0){p.current--;saveApp();renderQuestion();}
+  if(e.key==="ArrowRight"&&p.current<QUESTIONS.length-1){p.current++;saveApp();renderQuestion();}
+});
+
+function updateGlobalProgress(){
+  const n=answeredCount();
+  document.getElementById("sideProgressText").textContent=`${n} / 100`;
+  document.getElementById("sideProgressFill").style.width=`${n}%`;
+}
+function updateSectionProgress(){
+  const p=participant(); if(!p)return;
+  domains.forEach((d,i)=>{
+    const items=QUESTIONS.filter(q=>q.domain===d),done=items.filter(q=>p.answers[q.id]!=null).length;
+    const el=document.getElementById(`seg${i}`); if(el)el.style.width=`${done/items.length*100}%`;
+  });
+}
+
+function compute(p=participant()){
+  const axisSums={},axisWeights={},domainSums={},domainCounts={};
+  Object.keys(AXES).forEach(k=>{axisSums[k]=0;axisWeights[k]=0});
+  domains.forEach(d=>{domainSums[d]=0;domainCounts[d]=0});
+  if(!p)return {axes:Object.fromEntries(Object.keys(AXES).map(k=>[k,0])),domainScores:Object.fromEntries(domains.map(d=>[d,0]))};
+  QUESTIONS.forEach(q=>{
+    const a=p.answers[q.id]; if(a==null)return;
+    const norm=(a-3)/2; domainSums[q.domain]+=a;domainCounts[q.domain]++;
+    Object.entries(q.traits).forEach(([axis,w])=>{axisSums[axis]+=norm*w;axisWeights[axis]+=Math.abs(w);});
+  });
+  const axes={};Object.keys(AXES).forEach(k=>axes[k]=axisWeights[k]?Math.max(-1,Math.min(1,axisSums[k]/axisWeights[k])):0);
+  const domainScores={};domains.forEach(d=>domainScores[d]=domainCounts[d]?((domainSums[d]/domainCounts[d]-1)/4)*100:0);
+  return {axes,domainScores};
+}
+function pctFromAxis(v){return Math.round((v+1)*50);}
+function profileName(axes){
+  const ranked=Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));const [a,b]=ranked.slice(0,2);
+  const nouns={novelty:["Gardien","Explorateur"],intensity:["Nuance","Intense"],structure:["Improvisateur","Architecte"],social:["Indépendant","Collectif"],nature:["Urbain","Naturaliste"],aesthetic:["Pragmatique","Esthète"],digital:["Analogique","Numérique"],energy:["Contemplatif","Dynamique"],culture:["Grand public","Curateur"],sensory:["Épuré","Sensoriel"],creativity:["Classique","Créatif"]};
+  const pick=([k,v])=>nouns[k][v>=0?1:0];return `${pick(a)} ${pick(b).toLowerCase()}`;
+}
+function profileText(axes,domainScores){
+  const sortedAxes=Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,4),domainSorted=Object.entries(domainScores).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const phrase=sortedAxes.map(([k,v])=>{const m=AXES[k],strength=Math.abs(v),pole=v>=0?m.right:m.left,adv=strength>.55?"nettement":strength>.3?"modérément":"légèrement";return `${adv} orienté vers ${pole.toLowerCase()}`;});
+  return `Votre profil est surtout ${phrase[0]}, puis ${phrase[1]}. Une tendance supplémentaire apparaît vers ${phrase[2]}. Vos domaines d'affinité les plus élevés sont ${domainSorted.map(x=>x[0].toLowerCase()).join(", ")}. Cette synthèse décrit vos réponses actuelles : elle n'implique ni stabilité dans le temps, ni catégorie psychologique fixe.`;
+}
+
+function renderResults(){
+  const p=participant();if(!p)return;
+  const n=answeredCount(p),enough=n>=20;
+  document.getElementById("resultsContent").hidden=!enough;document.getElementById("emptyResults").hidden=enough;
+  document.getElementById("resultIntro").textContent=enough?`${p.name} - ${n} réponses prises en compte${n<100?" - le profil reste partiel tant que le test n'est pas complété.":" - cartographie complète."}`:"Répondez à au moins 20 questions pour générer un premier profil.";
+  if(!enough)return;
+  const {axes,domainScores}=compute(p);
+  document.getElementById("profileTitle").textContent=profileName(axes);document.getElementById("profileCopy").textContent=profileText(axes,domainScores);
+  document.getElementById("axisResults").innerHTML=Object.entries(axes).map(([k,v])=>{const m=AXES[k],pp=pctFromAxis(v),right=v>=0,width=Math.abs(pp-50)*2,left=right?50:pp,label=`${v>=0?m.right:m.left} ${Math.round(Math.abs(v)*100)}%`;return `<div class="axis-row"><div class="axis-name">${m.name}</div><div class="axis-bar"><span class="axis-zero"></span><span class="axis-value" style="left:${left}%;width:${width/2}%"></span></div><div class="axis-label">${label}</div></div>`;}).join("");
+  document.getElementById("domainResults").innerHTML=Object.entries(domainScores).sort((a,b)=>b[1]-a[1]).map(([d,s])=>`<div class="domain-score"><div class="top"><span>${d}</span><b>${Math.round(s)} / 100</b></div><div class="bar"><span style="width:${s}%"></span></div></div>`).join("");
+  const answered=QUESTIONS.filter(q=>p.answers[q.id]!=null).map(q=>({...q,answer:p.answers[q.id]})),likes=[...answered].sort((a,b)=>b.answer-a.answer||a.id-b.id).slice(0,5),dislikes=[...answered].sort((a,b)=>a.answer-b.answer||a.id-b.id).slice(0,5);
+  document.getElementById("topLikes").innerHTML=likes.map(q=>`<div class="top-item">${q.text}<small>${q.domain} - ${q.answer}/5</small></div>`).join("");document.getElementById("topDislikes").innerHTML=dislikes.map(q=>`<div class="top-item">${q.text}<small>${q.domain} - ${q.answer}/5</small></div>`).join("");drawRadar(axes);
+}
+
+function drawRadar(axes){
+  const canvas=document.getElementById("radar"),ctx=canvas.getContext("2d"),keys=Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,8),W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,R=165;ctx.clearRect(0,0,W,H);
+  const fg=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#72d49b",line=getComputedStyle(document.documentElement).getPropertyValue("--line").trim()||"#252b27",text=getComputedStyle(document.documentElement).getPropertyValue("--muted").trim()||"#aaa99f";
+  for(let ring=1;ring<=4;ring++){ctx.beginPath();keys.forEach((_,i)=>{const a=-Math.PI/2+i*2*Math.PI/keys.length,r=R*ring/4,x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.closePath();ctx.strokeStyle=line;ctx.lineWidth=1;ctx.stroke();}
+  keys.forEach((_,i)=>{const a=-Math.PI/2+i*2*Math.PI/keys.length;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.strokeStyle=line;ctx.stroke();});ctx.beginPath();keys.forEach(([k,v],i)=>{const a=-Math.PI/2+i*2*Math.PI/keys.length,r=R*(.22+.78*Math.abs(v)),x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.closePath();ctx.fillStyle=fg+"2e";ctx.fill();ctx.strokeStyle=fg;ctx.lineWidth=3;ctx.stroke();ctx.fillStyle=text;ctx.font="13px Inter, sans-serif";ctx.textAlign="center";keys.forEach(([k,v],i)=>{const a=-Math.PI/2+i*2*Math.PI/keys.length,r=R+34,x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r+4;ctx.fillText(v>=0?AXES[k].right:AXES[k].left,x,y);});
+}
+
+
+function encodeRoster(entries){
+  const bytes=new TextEncoder().encode(JSON.stringify(entries));let bin="";bytes.forEach(b=>bin+=String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"");
+}
+function decodeRoster(value){
+  try{
+    let s=value.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";
+    const bin=atob(s),bytes=Uint8Array.from(bin,c=>c.charCodeAt(0)),raw=JSON.parse(new TextDecoder().decode(bytes));
+    if(!Array.isArray(raw))return [];
+    // Compatibilité avec les anciens liens qui contenaient uniquement une liste de noms.
+    return raw.map(item=>typeof item==="string"?{id:null,name:safeName(item)}:{id:String(item?.id||""),name:safeName(item?.name)}).filter(x=>x.name);
+  }catch(e){return [];}
+}
+function applyRosterFromUrl(){
+  const token=new URLSearchParams(location.search).get("roster");if(!token)return 0;
+  const entries=decodeRoster(token);let added=0;
+  entries.forEach(entry=>{
+    const byId=entry.id?appState.participants[entry.id]:null;
+    const byName=Object.values(appState.participants).find(p=>p.name.toLocaleLowerCase()===entry.name.toLocaleLowerCase());
+    if(byId)return;
+    if(byName){
+      // Si un ancien participant du même nom existe sans réponses, il est remplacé par l'ID partagé.
+      if(entry.id && answeredCount(byName)===0){
+        delete appState.participants[byName.id];
+        byName.id=entry.id;appState.participants[entry.id]=byName;added++;
+      }
+      return;
+    }
+    const p=newParticipant(entry.name);if(entry.id)p.id=entry.id;appState.participants[p.id]=p;added++;
+  });
+  if(added)saveApp(false);return added;
+}
+async function shareRoster(){
+  const entries=Object.values(appState.participants).map(p=>({id:p.id,name:p.name})).filter(x=>x.name).sort((a,b)=>a.name.localeCompare(b.name,"fr"));
+  if(!entries.length){toast("Ajoutez d'abord les noms de l'équipe");return;}
+  const base=location.origin+location.pathname,url=`${base}?roster=${encodeRoster(entries)}`;
+  try{await navigator.clipboard.writeText(url);toast("Lien équipe copié");}
+  catch(e){window.prompt("Copiez ce lien et envoyez-le à l'équipe :",url);}
+}
+
+function participantExport(p){
+  const computed=compute(p);
+  return {schema:"gouts100-participant-v2",app:"Goûts 100",exportedAt:isoNow(),participant:{id:p.id,name:p.name,createdAt:p.createdAt,updatedAt:p.updatedAt,firstAnsweredAt:p.firstAnsweredAt,completedAt:p.completedAt,answered:answeredCount(p),profile:answeredCount(p)>=20?profileName(computed.axes):null,axes:computed.axes,domains:computed.domainScores,answers:Object.fromEntries(QUESTIONS.map(q=>[String(q.id).padStart(3,"0"),p.answers[q.id]??null]))}};
+}
+function downloadBlob(content,type,filename){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);}
+function exportParticipantJSON(p=participant()){if(!p)return;downloadBlob(JSON.stringify(participantExport(p),null,2),"application/json",`gouts100_${fileSafe(p.name)}.json`);toast("Fichier participant créé");}
+
+function allRecords(){
+  const map=new Map();
+  const keepBest=rec=>{
+    if(!rec?.participant?.id || !(rec.participant.answered||0))return;
+    const prev=map.get(rec.participant.id);
+    if(!prev){map.set(rec.participant.id,rec);return;}
+    const a=Number(rec.participant.answered||0),b=Number(prev.participant.answered||0);
+    const ta=D
