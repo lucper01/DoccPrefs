@@ -1,0 +1,83 @@
+ate.parse(rec.participant.updatedAt||rec.exportedAt||0)||0,tb=Date.parse(prev.participant.updatedAt||prev.exportedAt||0)||0;
+    if(a>b || (a===b && ta>tb))map.set(rec.participant.id,rec);
+  };
+  Object.values(appState.imported).forEach(keepBest);
+  Object.values(appState.participants).forEach(p=>{if(answeredCount(p)>0)keepBest(participantExport(p));});
+  return [...map.values()].sort((a,b)=>(a.participant.name||"").localeCompare(b.participant.name||"","fr"));
+}
+function csvEscape(v){if(v==null)return "";const s=String(v).replace(/"/g,'""');return /[";\n\r]/.test(s)?`"${s}"`:s;}
+function wideCSV(records=allRecords()){
+  const axisKeys=Object.keys(AXES),headers=["participant_id","nom","created_at","updated_at","first_answered_at","completed_at","n_reponses","profil",...axisKeys.map(k=>`axe_${k}`),...domains.map((d,i)=>`domaine_${String(i+1).padStart(2,"0")}_${d.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"_")}`),...QUESTIONS.map(q=>`Q${String(q.id).padStart(3,"0")}`)];
+  const rows=records.map(r=>{const p=r.participant;return [p.id,p.name,p.createdAt,p.updatedAt,p.firstAnsweredAt,p.completedAt,p.answered,p.profile,...axisKeys.map(k=>p.axes?.[k]??""),...domains.map(d=>p.domains?.[d]??""),...QUESTIONS.map(q=>p.answers?.[String(q.id).padStart(3,"0")]??"")];});
+  return "\ufeff"+[headers,...rows].map(row=>row.map(csvEscape).join(";")).join("\r\n");
+}
+function longCSV(records=allRecords()){
+  const headers=["participant_id","nom","question_id","domaine","question","reponse"];
+  const rows=[];records.forEach(r=>{const p=r.participant;QUESTIONS.forEach(q=>rows.push([p.id,p.name,q.id,q.domain,q.text,p.answers?.[String(q.id).padStart(3,"0")]??""]));});
+  return "\ufeff"+[headers,...rows].map(row=>row.map(csvEscape).join(";")).join("\r\n");
+}
+function exportCorpusJSON(){const payload={schema:"gouts100-corpus-v2",app:"Goûts 100",exportedAt:isoNow(),n:allRecords().length,records:allRecords()};downloadBlob(JSON.stringify(payload,null,2),"application/json","gouts100_corpus.json");toast("Corpus JSON créé");}
+
+function summaryText(){const p=participant(),{axes,domainScores}=compute(p),topAxes=Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,4).map(([k,v])=>`${AXES[k].name}: ${v>=0?AXES[k].right:AXES[k].left} (${Math.round(Math.abs(v)*100)}%)`),topDomains=Object.entries(domainScores).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([d,s])=>`${d} (${Math.round(s)}/100)`);return `Goûts 100 - ${p.name}\nProfil: ${profileName(axes)}\n${topAxes.join("\n")}\nDomaines principaux: ${topDomains.join(", ")}\n${profileText(axes,domainScores)}`;}
+
+document.getElementById("copyBtn").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(summaryText());toast("Résumé copié");}catch(e){toast("Copie non disponible dans ce navigateur");}});
+document.getElementById("downloadBtn").addEventListener("click",()=>exportParticipantJSON());
+document.getElementById("restartBtn").addEventListener("click",()=>{const p=participant();if(p&&confirm(`Effacer toutes les réponses de ${p.name} et recommencer ?`)){p.current=0;p.answers={};p.firstAnsweredAt=null;p.completedAt=null;p.updatedAt=isoNow();saveApp();renderQuestion();goToPage("quiz");}});
+
+document.getElementById("startBtn").addEventListener("click",()=>{if(!requireParticipant())return;const p=participant();if(answeredCount(p)&&!confirm(`Recommencer le test de ${p.name} ? Les réponses actuelles seront effacées.`))return;p.current=0;p.answers={};p.firstAnsweredAt=null;p.completedAt=null;p.updatedAt=isoNow();saveApp();goToPage("quiz");});
+document.getElementById("continueBtn").addEventListener("click",()=>{if(requireParticipant())goToPage("quiz");});
+document.getElementById("resumeBtn").addEventListener("click",()=>{if(requireParticipant())goToPage("quiz");});
+
+// Gestion des participants
+const participantModal=document.getElementById("participantModal"),bulkNamesModal=document.getElementById("bulkNamesModal");
+function openParticipantModal(){participantModal.classList.add("open");participantModal.setAttribute("aria-hidden","false");setTimeout(()=>document.getElementById("participantNameInput").focus(),30);}
+function closeParticipantModal(){participantModal.classList.remove("open");participantModal.setAttribute("aria-hidden","true");}
+function openBulkNamesModal(){bulkNamesModal.classList.add("open");bulkNamesModal.setAttribute("aria-hidden","false");}
+function closeBulkNamesModal(){bulkNamesModal.classList.remove("open");bulkNamesModal.setAttribute("aria-hidden","true");}
+document.getElementById("addParticipantBtn").addEventListener("click",openParticipantModal);document.getElementById("closeParticipantModal").addEventListener("click",closeParticipantModal);
+document.getElementById("saveParticipantBtn").addEventListener("click",()=>{const v=document.getElementById("participantNameInput").value;if(!safeName(v)){toast("Saisissez un nom");return;}addParticipant(v,true);document.getElementById("participantNameInput").value="";closeParticipantModal();toast("Participant ajouté");});
+document.getElementById("participantNameInput").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("saveParticipantBtn").click();});
+document.getElementById("bulkNamesBtn").addEventListener("click",openBulkNamesModal);document.getElementById("closeBulkNamesModal").addEventListener("click",closeBulkNamesModal);
+document.getElementById("saveBulkNamesBtn").addEventListener("click",()=>{const raw=document.getElementById("bulkNamesInput").value,names=raw.split(/\r?\n|;/).map(safeName).filter(Boolean);if(!names.length){toast("Aucun nom détecté");return;}names.forEach(n=>addParticipant(n,false));document.getElementById("bulkNamesInput").value="";closeBulkNamesModal();toast(`${names.length} nom(s) ajouté(s)`);});
+[participantModal,bulkNamesModal].forEach(m=>m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("open");}));
+
+// Import et corpus
+const importFiles=document.getElementById("importFiles"),fileDrop=document.getElementById("fileDrop");
+fileDrop.addEventListener("click",()=>importFiles.click());
+fileDrop.addEventListener("dragover",e=>{e.preventDefault();fileDrop.style.borderColor="var(--accent)";});
+fileDrop.addEventListener("dragleave",()=>fileDrop.style.borderColor="");
+fileDrop.addEventListener("drop",e=>{e.preventDefault();fileDrop.style.borderColor="";handleImportFiles(e.dataTransfer.files);});
+importFiles.addEventListener("change",e=>handleImportFiles(e.target.files));
+async function handleImportFiles(files){
+  let ok=0,bad=0;
+  for(const f of [...files]){
+    try{
+      const obj=JSON.parse(await f.text());
+      const records=obj.schema==="gouts100-corpus-v2"&&Array.isArray(obj.records)?obj.records:[obj];
+      for(const rec of records){if(rec?.schema==="gouts100-participant-v2"&&rec.participant?.id&&rec.participant?.name){appState.imported[rec.participant.id]=rec;ok++;}else bad++;}
+    }catch(e){bad++;}
+  }
+  importFiles.value="";saveApp();toast(`${ok} session(s) importée(s)${bad?` - ${bad} fichier(s) ignoré(s)`:""}`);
+}
+
+document.getElementById("exportWideBtn").addEventListener("click",()=>{const r=allRecords();if(!r.length){toast("Aucune donnée à exporter");return;}downloadBlob(wideCSV(r),"text/csv;charset=utf-8","gouts100_corpus_large.csv");toast("CSV large créé");});
+document.getElementById("exportLongBtn").addEventListener("click",()=>{const r=allRecords();if(!r.length){toast("Aucune donnée à exporter");return;}downloadBlob(longCSV(r),"text/csv;charset=utf-8","gouts100_corpus_long.csv");toast("CSV long créé");});
+document.getElementById("exportCorpusJsonBtn").addEventListener("click",()=>{if(!allRecords().length){toast("Aucune donnée à exporter");return;}exportCorpusJSON();});
+document.getElementById("shareRosterBtn").addEventListener("click",shareRoster);
+
+function updateDataPage(){
+  const local=Object.values(appState.participants).sort((a,b)=>a.name.localeCompare(b.name,"fr")),imported=Object.values(appState.imported).sort((a,b)=>(a.participant?.name||"").localeCompare(b.participant?.name||"","fr")),all=allRecords();
+  document.getElementById("statLocal").textContent=local.length;document.getElementById("statImported").textContent=imported.length;document.getElementById("statComplete").textContent=all.filter(r=>r.participant.answered===100).length;document.getElementById("statTotalAnswers").textContent=all.reduce((s,r)=>s+(r.participant.answered||0),0);
+  document.getElementById("localParticipantRows").innerHTML=local.length?local.map(p=>`<div class="data-row"><div><strong>${escapeHtml(p.name)}${p.id===appState.activeParticipantId?'<span class="tag">ACTIF</span>':''}</strong><small>${answeredCount(p)}/100 réponses - dernière modification ${formatDate(p.updatedAt)}</small></div><div class="row-actions"><button onclick="selectLocalFromData('${p.id}')">Sélectionner</button><button onclick="exportLocalById('${p.id}')">JSON</button><button class="danger-btn" onclick="deleteLocalById('${p.id}')">Supprimer</button></div></div>`).join(""):'<div class="note">Aucune session locale.</div>';
+  document.getElementById("importedParticipantRows").innerHTML=imported.length?imported.map(r=>{const p=r.participant;return `<div class="data-row"><div><strong>${escapeHtml(p.name)}</strong><small>${p.answered||0}/100 réponses - importé dans le corpus</small></div><div class="row-actions"><button class="danger-btn" onclick="deleteImportedById('${p.id}')">Retirer</button></div></div>`;}).join(""):'<div class="note">Aucun fichier importé.</div>';
+}
+window.selectLocalFromData=id=>{selectParticipant(id);goToPage("home");toast("Participant sélectionné");};
+window.exportLocalById=id=>{const p=appState.participants[id];if(p)exportParticipantJSON(p);};
+window.deleteLocalById=id=>{const p=appState.participants[id];if(!p)return;if(confirm(`Supprimer la session locale de ${p.name} ?`)){delete appState.participants[id];if(appState.activeParticipantId===id)appState.activeParticipantId=null;saveApp();renderResults();}};
+window.deleteImportedById=id=>{delete appState.imported[id];saveApp();};
+
+// Personnalisation
+const settingsModal=document.getElementById("settingsModal");
+document.getElementById("settingsBtn").addEventListener("click",()=>{settingsModal.classList.add("open");settingsModal.setAttribute("aria-hidden","false")});
+document.getElementById("closeSettings").addEventListener("click",closeSettings);settingsModal.addEventListener("click",e=>{if(e.target===settingsModal)closeSettings()});
+function closeSettings(){settingsModal.c
