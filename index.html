@@ -194,6 +194,35 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{sc
   .axis-row{grid-template-columns:92px 1fr}.axis-label{grid-column:2;text-align:left;margin-top:-7px}
   .quiz-footer{flex-direction:column}.quiz-footer .right{display:grid;grid-template-columns:1fr 1fr}.quiz-footer button{width:100%}
 }
+
+.participant-panel{margin-top:30px;padding:18px;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:end}
+.field label{display:block;color:var(--muted);font-size:.78rem;margin-bottom:8px;font-weight:700}
+.field select,.field input,.field textarea{
+  width:100%;background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:13px;
+  padding:12px 13px;outline:none
+}
+.field select:focus,.field input:focus,.field textarea:focus{border-color:var(--accent)}
+.participant-current{margin-top:9px;color:var(--muted);font-size:.82rem}
+.participant-current b{color:var(--text)}
+.data-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}
+.data-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.data-list{display:grid;gap:9px;margin-top:14px}
+.data-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:14px;border:1px solid var(--line);background:var(--panel-2);border-radius:14px}
+.data-row strong{display:block}
+.data-row small{display:block;color:var(--muted);margin-top:4px;line-height:1.4}
+.row-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.row-actions button{border:1px solid var(--line);background:#171b18;border-radius:9px;padding:8px 10px;cursor:pointer;color:var(--muted);font-size:.78rem}
+.row-actions button:hover{color:var(--text);border-color:#4a584f}
+.info-banner{border:1px solid rgba(114,212,155,.28);background:var(--accent-soft);border-radius:16px;padding:15px 17px;color:#d8e8dd;line-height:1.55}
+.file-drop{border:1px dashed #465149;border-radius:16px;padding:22px;text-align:center;background:#0d100e;color:var(--muted);cursor:pointer}
+.file-drop:hover{border-color:var(--accent);color:var(--text)}
+.dataset-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+.dataset-stats .stat{padding:15px}
+.dataset-stats .stat b{font-size:1.35rem}
+.tag{display:inline-flex;padding:4px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:.7rem;font-weight:800;margin-left:7px}
+.danger-btn{border-color:rgba(255,142,142,.3)!important;color:var(--danger)!important}
+@media(max-width:800px){.participant-panel,.data-grid{grid-template-columns:1fr}.dataset-stats{grid-template-columns:repeat(2,1fr)}.data-row{grid-template-columns:1fr}.row-actions{justify-content:flex-start}}
+
 </style>
 </head>
 <body>
@@ -207,7 +236,8 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{sc
       <button class="active" data-page="home" title="Accueil">Accueil <span>01</span></button>
       <button data-page="quiz" title="Test">Test <span>02</span></button>
       <button data-page="results" title="Résultats">Résultats <span>03</span></button>
-      <button data-page="about" title="À propos">À propos <span>04</span></button>
+      <button data-page="data" title="Données">Données <span>04</span></button>
+      <button data-page="about" title="À propos">À propos <span>05</span></button>
     </nav>
     <div class="side-progress">
       <label><span>Progression</span><b id="sideProgressText">0 / 100</b></label>
@@ -225,6 +255,16 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{sc
         <div class="eyebrow">Test de goûts - 100 questions</div>
         <h1>Cartographier ce que vous aimez, sans vous enfermer dans une case.</h1>
         <p class="lead">Goûts 100 explore dix domaines de préférence et les relie à plusieurs tendances transversales : recherche de nouveauté, intensité, structure, sociabilité, rapport à la nature, esthétique, numérique, énergie, curiosité culturelle, richesse sensorielle et créativité.</p>
+
+        <div class="card participant-panel">
+          <div class="field">
+            <label for="participantSelect">Qui répond ?</label>
+            <select id="participantSelect"><option value="">Sélectionner un nom</option></select>
+            <div class="participant-current" id="participantCurrent">Aucun participant sélectionné.</div>
+          </div>
+          <button class="secondary" id="addParticipantBtn">Ajouter un nom</button>
+        </div>
+
         <div class="hero-actions">
           <button class="primary" id="startBtn">Commencer les 100 questions</button>
           <button class="secondary" id="continueBtn">Continuer ma session</button>
@@ -252,7 +292,7 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{sc
       <div class="shell">
         <div class="quiz-head">
           <div>
-            <div class="eyebrow">Votre cartographie</div>
+            <div class="eyebrow">Votre cartographie - <span id="quizParticipantName">participant</span></div>
             <h2>100 préférences, une vue d'ensemble.</h2>
           </div>
           <div class="quiz-count" id="quizCount">Question 1 / 100</div>
@@ -299,7 +339,7 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{sc
               <div class="profile-copy" id="profileCopy"></div>
               <div class="actions-row">
                 <button class="primary" id="copyBtn">Copier mon résumé</button>
-                <button class="secondary" id="downloadBtn">Exporter mes résultats</button>
+                <button class="secondary" id="downloadBtn">Exporter mes résultats JSON</button>
                 <button class="ghost" id="restartBtn">Recommencer</button>
               </div>
             </div>
@@ -341,6 +381,48 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{sc
       </div>
     </section>
 
+    <section class="page" id="data">
+      <div class="shell">
+        <div class="eyebrow">Collecte</div>
+        <h2>Participants et données</h2>
+        <p class="lead">Cette page sert de point de collecte local. Les sessions créées dans ce navigateur sont conservées séparément par participant. Les fichiers exportés par les collègues peuvent ensuite être importés ici pour constituer un corpus commun.</p>
+
+        <div class="info-banner">
+          GitHub Pages est un hébergement statique : les réponses d'un collègue utilisant son propre appareil ne peuvent pas apparaître automatiquement dans ton navigateur. Le flux prévu est donc : sélection du nom, passation, export individuel JSON, puis import de ces fichiers dans cette page. Aucune donnée n'est envoyée vers un serveur.
+        </div>
+
+        <div class="dataset-stats">
+          <div class="stat"><b id="statLocal">0</b><span>sessions locales</span></div>
+          <div class="stat"><b id="statImported">0</b><span>fichiers importés</span></div>
+          <div class="stat"><b id="statComplete">0</b><span>tests complets</span></div>
+          <div class="stat"><b id="statTotalAnswers">0</b><span>réponses cumulées</span></div>
+        </div>
+
+        <div class="data-toolbar">
+          <button class="primary" id="exportWideBtn">Exporter le corpus CSV</button>
+          <button class="secondary" id="exportLongBtn">CSV format long</button>
+          <button class="secondary" id="exportCorpusJsonBtn">Corpus JSON</button>
+          <button class="ghost" id="bulkNamesBtn">Ajouter plusieurs noms</button>
+          <button class="ghost" id="shareRosterBtn">Copier le lien équipe</button>
+        </div>
+
+        <div class="data-grid">
+          <div class="card result-card">
+            <h3>Sessions de ce navigateur</h3>
+            <p class="note" style="margin-top:0">Chaque nom possède sa propre progression et peut reprendre le test ultérieurement.</p>
+            <div class="data-list" id="localParticipantRows"></div>
+          </div>
+          <div class="card result-card">
+            <h3>Importer les collègues</h3>
+            <p class="note" style="margin-top:0">Sélectionner un ou plusieurs fichiers JSON générés par le bouton « Exporter mes résultats ».</p>
+            <input id="importFiles" type="file" accept="application/json,.json" multiple hidden>
+            <div class="file-drop" id="fileDrop">Cliquer ici pour importer plusieurs fichiers JSON</div>
+            <div class="data-list" id="importedParticipantRows"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="page" id="about">
       <div class="shell">
         <div class="eyebrow">À propos</div>
@@ -349,7 +431,7 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{sc
         <div class="about-grid">
           <div class="card">
             <h3>Confidentialité</h3>
-            <p class="note">Toutes les réponses sont enregistrées uniquement dans le stockage local de votre navigateur. Aucun compte, serveur, cookie publicitaire ou service externe n'est utilisé.</p>
+            <p class="note">Toutes les réponses sont enregistrées dans le stockage local du navigateur. Aucun compte, serveur, cookie publicitaire ou service externe n'est utilisé. Les données ne quittent l'appareil que lorsque l'utilisateur exporte volontairement un fichier.</p>
           </div>
           <div class="card">
             <h3>Interprétation</h3>
@@ -367,6 +449,40 @@ body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{sc
       </div>
     </section>
   </main>
+</div>
+
+<div class="modal" id="participantModal" aria-hidden="true">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><div class="eyebrow">Participant</div><h3 style="margin-top:5px">Ajouter un nom</h3></div>
+      <button class="icon-btn" id="closeParticipantModal">×</button>
+    </div>
+    <div class="field" style="margin-top:18px">
+      <label for="participantNameInput">Nom ou pseudonyme</label>
+      <input id="participantNameInput" maxlength="80" autocomplete="off" placeholder="Ex. Camille">
+      <div class="note" style="margin-top:8px">Le nom est uniquement enregistré dans ce navigateur et dans les fichiers exportés.</div>
+    </div>
+    <div class="actions-row">
+      <button class="primary" id="saveParticipantBtn">Créer et sélectionner</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="bulkNamesModal" aria-hidden="true">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><div class="eyebrow">Répertoire</div><h3 style="margin-top:5px">Ajouter plusieurs noms</h3></div>
+      <button class="icon-btn" id="closeBulkNamesModal">×</button>
+    </div>
+    <div class="field" style="margin-top:18px">
+      <label for="bulkNamesInput">Un nom par ligne</label>
+      <textarea id="bulkNamesInput" rows="9" placeholder="Camille\nAlex\nMorgan"></textarea>
+      <div class="note" style="margin-top:8px">Les noms ajoutés apparaîtront ensuite dans le sélecteur de participants de ce navigateur.</div>
+    </div>
+    <div class="actions-row">
+      <button class="primary" id="saveBulkNamesBtn">Ajouter la liste</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal" id="settingsModal" aria-hidden="true">
@@ -410,320 +526,375 @@ const AXES = {
 };
 
 const domains = [...new Set(QUESTIONS.map(q => q.domain))];
-let state = {
-  current: 0,
-  answers: {},
-  settings: {font:16, contrast:false, motion:false}
+const APP_KEY = "gouts100_app_v2";
+const LEGACY_KEY = "gouts100_state_v1";
+
+// Optionnel : préremplir ici les noms affichés dans la liste sur une nouvelle installation.
+// Exemple : const PRESET_PARTICIPANTS = ["Alice", "Bob", "Camille"];
+const PRESET_PARTICIPANTS = [];
+
+let appState = {
+  activeParticipantId:null,
+  participants:{},
+  imported:{},
+  settings:{font:16,contrast:false,motion:false}
 };
 
-const LS_KEY = "gouts100_state_v1";
+function uid(){
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return "p_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,10);
+}
+function isoNow(){ return new Date().toISOString(); }
+function safeName(s){ return String(s||"").trim().replace(/\s+/g," "); }
+function fileSafe(s){ return safeName(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9_-]+/g,"_").replace(/^_+|_+$/g,"") || "participant"; }
+
+function newParticipant(name){
+  const id=uid(), now=isoNow();
+  return {id,name:safeName(name),createdAt:now,updatedAt:now,firstAnsweredAt:null,completedAt:null,current:0,answers:{}};
+}
+function participant(){ return appState.activeParticipantId ? appState.participants[appState.activeParticipantId] || null : null; }
+function answeredCount(p=participant()){ return p ? Object.keys(p.answers||{}).filter(k=>p.answers[k]!=null).length : 0; }
 
 function loadState(){
   try{
-    const saved = JSON.parse(localStorage.getItem(LS_KEY));
-    if(saved) state = {...state, ...saved, settings:{...state.settings,...(saved.settings||{})}};
+    const saved=JSON.parse(localStorage.getItem(APP_KEY));
+    if(saved) appState={...appState,...saved,settings:{...appState.settings,...(saved.settings||{})},participants:saved.participants||{},imported:saved.imported||{}};
   }catch(e){}
+
+  // Migration douce de la première version mono-participant.
+  if(!Object.keys(appState.participants).length){
+    try{
+      const old=JSON.parse(localStorage.getItem(LEGACY_KEY));
+      if(old && old.answers && Object.keys(old.answers).length){
+        const p=newParticipant("Session précédente");
+        p.current=old.current||0; p.answers=old.answers||{}; p.updatedAt=isoNow();
+        appState.participants[p.id]=p; appState.activeParticipantId=p.id;
+      }
+    }catch(e){}
+  }
+  // Ajout des noms prédéfinis sans modifier les sessions déjà existantes.
+  PRESET_PARTICIPANTS.map(safeName).filter(Boolean).forEach(name=>{
+    if(!Object.values(appState.participants).some(p=>p.name.toLocaleLowerCase()===name.toLocaleLowerCase())){
+      const p=newParticipant(name); appState.participants[p.id]=p;
+    }
+  });
   applySettings();
+  saveApp(false);
 }
-function saveState(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); updateGlobalProgress(); }
-function answeredCount(){ return Object.keys(state.answers).filter(k => state.answers[k] != null).length; }
+function saveApp(refresh=true){
+  localStorage.setItem(APP_KEY,JSON.stringify(appState));
+  if(refresh){ updateParticipantUI(); updateGlobalProgress(); updateDataPage(); }
+}
+
+function addParticipant(name,selectIt=true){
+  name=safeName(name);
+  if(!name) return null;
+  const existing=Object.values(appState.participants).find(p=>p.name.toLocaleLowerCase()===name.toLocaleLowerCase());
+  if(existing){ if(selectIt) appState.activeParticipantId=existing.id; saveApp(); return existing; }
+  const p=newParticipant(name); appState.participants[p.id]=p;
+  if(selectIt) appState.activeParticipantId=p.id;
+  saveApp(); return p;
+}
+function selectParticipant(id){
+  if(!appState.participants[id]) return;
+  appState.activeParticipantId=id; saveApp(); renderQuestion(); renderResults();
+}
+function requireParticipant(){
+  if(participant()) return true;
+  openParticipantModal(); toast("Sélectionnez ou ajoutez un nom");
+  return false;
+}
 
 function goToPage(id){
-  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active", p.id===id));
-  document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active", b.dataset.page===id));
+  if((id==="quiz" || id==="results") && !participant()){
+    goToPage("home"); openParticipantModal(); return;
+  }
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===id));
   if(id==="quiz") renderQuestion();
   if(id==="results") renderResults();
-  window.scrollTo({top:0,behavior:state.settings.motion?"auto":"smooth"});
+  if(id==="data") updateDataPage();
+  window.scrollTo({top:0,behavior:appState.settings.motion?"auto":"smooth"});
 }
 
 document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>goToPage(b.dataset.page)));
 
 function renderDomains(){
-  document.getElementById("domainList").innerHTML = domains.map((d,i)=>`<div class="domain-pill">${String(i+1).padStart(2,"0")} - ${d}</div>`).join("");
-  document.getElementById("sectionProgress").innerHTML = domains.map((d,i)=>`<div class="section-seg" title="${d}"><span id="seg${i}"></span></div>`).join("");
+  document.getElementById("domainList").innerHTML=domains.map((d,i)=>`<div class="domain-pill">${String(i+1).padStart(2,"0")} - ${d}</div>`).join("");
+  document.getElementById("sectionProgress").innerHTML=domains.map((d,i)=>`<div class="section-seg" title="${d}"><span id="seg${i}"></span></div>`).join("");
 }
 
+function updateParticipantUI(){
+  const select=document.getElementById("participantSelect");
+  if(!select) return;
+  const list=Object.values(appState.participants).sort((a,b)=>a.name.localeCompare(b.name,"fr",{sensitivity:"base"}));
+  select.innerHTML='<option value="">Sélectionner un nom</option>'+list.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join("");
+  select.value=participant()?.id||"";
+  const p=participant(), n=answeredCount(p);
+  document.getElementById("participantCurrent").innerHTML=p ? `<b>${escapeHtml(p.name)}</b> - ${n}/100 réponses enregistrées` : "Aucun participant sélectionné.";
+  document.getElementById("continueBtn").style.display=p && n ? "inline-block":"none";
+  document.getElementById("startBtn").textContent=p && n ? "Recommencer avec ce nom" : "Commencer les 100 questions";
+  document.getElementById("quizParticipantName").textContent=p?.name||"participant";
+}
+
+document.getElementById("participantSelect").addEventListener("change",e=>{
+  if(e.target.value) selectParticipant(e.target.value); else {appState.activeParticipantId=null;saveApp();}
+});
+
 function renderQuestion(){
-  const q = QUESTIONS[state.current];
-  document.getElementById("domainBadge").textContent = q.domain;
-  document.getElementById("qNumber").textContent = `Question ${String(q.id).padStart(2,"0")}`;
-  document.getElementById("questionText").textContent = q.text;
-  document.getElementById("quizCount").textContent = `Question ${q.id} / ${QUESTIONS.length}`;
-  document.querySelectorAll(".choice").forEach(btn=>{
-    btn.classList.toggle("selected", Number(btn.dataset.value)===state.answers[q.id]);
-  });
-  document.getElementById("prevBtn").disabled = state.current===0;
-  document.getElementById("nextBtn").textContent = state.current===QUESTIONS.length-1 ? "Voir mes résultats" : "Suivante";
+  const p=participant(); if(!p) return;
+  p.current=Math.max(0,Math.min(QUESTIONS.length-1,Number(p.current)||0));
+  const q=QUESTIONS[p.current];
+  document.getElementById("domainBadge").textContent=q.domain;
+  document.getElementById("qNumber").textContent=`Question ${String(q.id).padStart(2,"0")}`;
+  document.getElementById("questionText").textContent=q.text;
+  document.getElementById("quizCount").textContent=`Question ${q.id} / ${QUESTIONS.length}`;
+  document.getElementById("quizParticipantName").textContent=p.name;
+  document.querySelectorAll(".choice").forEach(btn=>btn.classList.toggle("selected",Number(btn.dataset.value)===p.answers[q.id]));
+  document.getElementById("prevBtn").disabled=p.current===0;
+  document.getElementById("nextBtn").textContent=p.current===QUESTIONS.length-1?"Voir mes résultats":"Suivante";
   updateSectionProgress();
 }
 
 function answer(value){
-  state.answers[QUESTIONS[state.current].id] = value;
-  saveState();
-  renderQuestion();
-  if(state.current < QUESTIONS.length-1){
-    setTimeout(()=>{ state.current++; saveState(); renderQuestion(); }, state.settings.motion ? 0 : 120);
-  } else {
-    renderResults();
-    goToPage("results");
-  }
+  const p=participant(); if(!p) return;
+  const q=QUESTIONS[p.current];
+  if(!p.firstAnsweredAt) p.firstAnsweredAt=isoNow();
+  p.answers[q.id]=value; p.updatedAt=isoNow();
+  if(answeredCount(p)===100 && !p.completedAt) p.completedAt=isoNow();
+  saveApp(); renderQuestion();
+  if(p.current<QUESTIONS.length-1){
+    setTimeout(()=>{p.current++;p.updatedAt=isoNow();saveApp();renderQuestion();},appState.settings.motion?0:120);
+  }else{ renderResults();goToPage("results"); }
 }
 
 document.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>answer(Number(btn.dataset.value))));
-document.getElementById("prevBtn").addEventListener("click",()=>{ if(state.current>0){state.current--;saveState();renderQuestion();}});
+document.getElementById("prevBtn").addEventListener("click",()=>{const p=participant();if(p&&p.current>0){p.current--;p.updatedAt=isoNow();saveApp();renderQuestion();}});
 document.getElementById("nextBtn").addEventListener("click",()=>{
-  if(state.current===QUESTIONS.length-1){ renderResults(); goToPage("results"); }
-  else { state.current++; saveState(); renderQuestion(); }
+  const p=participant(); if(!p)return;
+  if(p.current===QUESTIONS.length-1){renderResults();goToPage("results");}
+  else{p.current++;p.updatedAt=isoNow();saveApp();renderQuestion();}
 });
 document.getElementById("skipBtn").addEventListener("click",()=>{
-  delete state.answers[QUESTIONS[state.current].id];
-  if(state.current < QUESTIONS.length-1) state.current++;
-  saveState(); renderQuestion();
+  const p=participant();if(!p)return;
+  delete p.answers[QUESTIONS[p.current].id]; if(p.current<QUESTIONS.length-1)p.current++; p.updatedAt=isoNow();saveApp();renderQuestion();
 });
 
 document.addEventListener("keydown",e=>{
-  if(!document.getElementById("quiz").classList.contains("active")) return;
-  if(["1","2","3","4","5"].includes(e.key)) answer(Number(e.key));
-  if(e.key==="ArrowLeft" && state.current>0){state.current--;saveState();renderQuestion();}
-  if(e.key==="ArrowRight" && state.current<QUESTIONS.length-1){state.current++;saveState();renderQuestion();}
+  if(!document.getElementById("quiz").classList.contains("active"))return;
+  const p=participant();if(!p)return;
+  if(["1","2","3","4","5"].includes(e.key))answer(Number(e.key));
+  if(e.key==="ArrowLeft"&&p.current>0){p.current--;saveApp();renderQuestion();}
+  if(e.key==="ArrowRight"&&p.current<QUESTIONS.length-1){p.current++;saveApp();renderQuestion();}
 });
 
 function updateGlobalProgress(){
-  const n = answeredCount();
-  document.getElementById("sideProgressText").textContent = `${n} / 100`;
-  document.getElementById("sideProgressFill").style.width = `${n}%`;
-  document.getElementById("continueBtn").style.display = n ? "inline-block" : "none";
+  const n=answeredCount();
+  document.getElementById("sideProgressText").textContent=`${n} / 100`;
+  document.getElementById("sideProgressFill").style.width=`${n}%`;
 }
 function updateSectionProgress(){
+  const p=participant(); if(!p)return;
   domains.forEach((d,i)=>{
-    const items = QUESTIONS.filter(q=>q.domain===d);
-    const done = items.filter(q=>state.answers[q.id] != null).length;
-    document.getElementById(`seg${i}`).style.width = `${done/items.length*100}%`;
+    const items=QUESTIONS.filter(q=>q.domain===d),done=items.filter(q=>p.answers[q.id]!=null).length;
+    const el=document.getElementById(`seg${i}`); if(el)el.style.width=`${done/items.length*100}%`;
   });
 }
 
-function compute(){
-  const axisSums={}, axisWeights={}, domainSums={}, domainCounts={};
+function compute(p=participant()){
+  const axisSums={},axisWeights={},domainSums={},domainCounts={};
   Object.keys(AXES).forEach(k=>{axisSums[k]=0;axisWeights[k]=0});
   domains.forEach(d=>{domainSums[d]=0;domainCounts[d]=0});
-
+  if(!p)return {axes:Object.fromEntries(Object.keys(AXES).map(k=>[k,0])),domainScores:Object.fromEntries(domains.map(d=>[d,0]))};
   QUESTIONS.forEach(q=>{
-    const a = state.answers[q.id];
-    if(a == null) return;
-    const norm = (a-3)/2;
-    domainSums[q.domain]+=a;
-    domainCounts[q.domain]++;
-    Object.entries(q.traits).forEach(([axis,w])=>{
-      axisSums[axis]+=norm*w;
-      axisWeights[axis]+=Math.abs(w);
-    });
+    const a=p.answers[q.id]; if(a==null)return;
+    const norm=(a-3)/2; domainSums[q.domain]+=a;domainCounts[q.domain]++;
+    Object.entries(q.traits).forEach(([axis,w])=>{axisSums[axis]+=norm*w;axisWeights[axis]+=Math.abs(w);});
   });
-
-  const axes={};
-  Object.keys(AXES).forEach(k=>{
-    axes[k]=axisWeights[k] ? Math.max(-1,Math.min(1,axisSums[k]/axisWeights[k])) : 0;
-  });
-  const domainScores={};
-  domains.forEach(d=>{
-    domainScores[d]=domainCounts[d] ? ((domainSums[d]/domainCounts[d]-1)/4)*100 : 0;
-  });
+  const axes={};Object.keys(AXES).forEach(k=>axes[k]=axisWeights[k]?Math.max(-1,Math.min(1,axisSums[k]/axisWeights[k])):0);
+  const domainScores={};domains.forEach(d=>domainScores[d]=domainCounts[d]?((domainSums[d]/domainCounts[d]-1)/4)*100:0);
   return {axes,domainScores};
 }
-
-function pctFromAxis(v){ return Math.round((v+1)*50); }
-
+function pctFromAxis(v){return Math.round((v+1)*50);}
 function profileName(axes){
-  const ranked = Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
-  const [a,b,c] = ranked.slice(0,3);
-
-  const nouns = {
-    novelty:["Gardien","Explorateur"],
-    intensity:["Nuance","Intense"],
-    structure:["Improvisateur","Architecte"],
-    social:["Indépendant","Collectif"],
-    nature:["Urbain","Naturaliste"],
-    aesthetic:["Pragmatique","Esthète"],
-    digital:["Analogique","Numérique"],
-    energy:["Contemplatif","Dynamique"],
-    culture:["Grand public","Curateur"],
-    sensory:["Épuré","Sensoriel"],
-    creativity:["Classique","Créatif"]
-  };
-  const pick = ([k,v]) => nouns[k][v>=0?1:0];
-  const first = pick(a);
-  const second = pick(b).toLowerCase();
-  return `${first} ${second}`;
+  const ranked=Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));const [a,b]=ranked.slice(0,2);
+  const nouns={novelty:["Gardien","Explorateur"],intensity:["Nuance","Intense"],structure:["Improvisateur","Architecte"],social:["Indépendant","Collectif"],nature:["Urbain","Naturaliste"],aesthetic:["Pragmatique","Esthète"],digital:["Analogique","Numérique"],energy:["Contemplatif","Dynamique"],culture:["Grand public","Curateur"],sensory:["Épuré","Sensoriel"],creativity:["Classique","Créatif"]};
+  const pick=([k,v])=>nouns[k][v>=0?1:0];return `${pick(a)} ${pick(b).toLowerCase()}`;
 }
-
-function profileText(axes, domainScores){
-  const sortedAxes = Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,4);
-  const domainSorted = Object.entries(domainScores).sort((a,b)=>b[1]-a[1]).slice(0,3);
-  const phrase = sortedAxes.map(([k,v])=>{
-    const meta=AXES[k], strength=Math.abs(v);
-    const pole=v>=0?meta.right:meta.left;
-    const adv = strength>.55 ? "nettement" : strength>.3 ? "modérément" : "légèrement";
-    return `${adv} orienté vers ${pole.toLowerCase()}`;
-  });
+function profileText(axes,domainScores){
+  const sortedAxes=Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,4),domainSorted=Object.entries(domainScores).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const phrase=sortedAxes.map(([k,v])=>{const m=AXES[k],strength=Math.abs(v),pole=v>=0?m.right:m.left,adv=strength>.55?"nettement":strength>.3?"modérément":"légèrement";return `${adv} orienté vers ${pole.toLowerCase()}`;});
   return `Votre profil est surtout ${phrase[0]}, puis ${phrase[1]}. Une tendance supplémentaire apparaît vers ${phrase[2]}. Vos domaines d'affinité les plus élevés sont ${domainSorted.map(x=>x[0].toLowerCase()).join(", ")}. Cette synthèse décrit vos réponses actuelles : elle n'implique ni stabilité dans le temps, ni catégorie psychologique fixe.`;
 }
 
 function renderResults(){
-  const n = answeredCount();
-  const enough = n>=20;
-  document.getElementById("resultsContent").hidden = !enough;
-  document.getElementById("emptyResults").hidden = enough;
-  document.getElementById("resultIntro").textContent = enough
-    ? `${n} réponses prises en compte${n<100 ? " - le profil reste partiel tant que le test n'est pas complété." : " - cartographie complète."}`
-    : "Répondez à au moins 20 questions pour générer un premier profil.";
-
-  if(!enough) return;
-  const {axes,domainScores}=compute();
-  document.getElementById("profileTitle").textContent = profileName(axes);
-  document.getElementById("profileCopy").textContent = profileText(axes,domainScores);
-
-  document.getElementById("axisResults").innerHTML = Object.entries(axes).map(([k,v])=>{
-    const m=AXES[k], p=pctFromAxis(v), right=v>=0;
-    const width=Math.abs(p-50)*2;
-    const left=right?50:p;
-    const label = `${v>=0?m.right:m.left} ${Math.round(Math.abs(v)*100)}%`;
-    return `<div class="axis-row">
-      <div class="axis-name">${m.name}</div>
-      <div class="axis-bar">
-        <span class="axis-zero"></span>
-        <span class="axis-value" style="left:${left}%;width:${width/2}%"></span>
-      </div>
-      <div class="axis-label">${label}</div>
-    </div>`;
-  }).join("");
-
-  document.getElementById("domainResults").innerHTML = Object.entries(domainScores)
-    .sort((a,b)=>b[1]-a[1])
-    .map(([d,s])=>`<div class="domain-score">
-      <div class="top"><span>${d}</span><b>${Math.round(s)} / 100</b></div>
-      <div class="bar"><span style="width:${s}%"></span></div>
-    </div>`).join("");
-
-  const answered = QUESTIONS.filter(q=>state.answers[q.id]!=null)
-    .map(q=>({...q,answer:state.answers[q.id]}));
-  const likes=[...answered].sort((a,b)=>b.answer-a.answer || a.id-b.id).slice(0,5);
-  const dislikes=[...answered].sort((a,b)=>a.answer-b.answer || a.id-b.id).slice(0,5);
-  document.getElementById("topLikes").innerHTML=likes.map(q=>`<div class="top-item">${q.text}<small>${q.domain} - ${q.answer}/5</small></div>`).join("");
-  document.getElementById("topDislikes").innerHTML=dislikes.map(q=>`<div class="top-item">${q.text}<small>${q.domain} - ${q.answer}/5</small></div>`).join("");
-  drawRadar(axes);
+  const p=participant();if(!p)return;
+  const n=answeredCount(p),enough=n>=20;
+  document.getElementById("resultsContent").hidden=!enough;document.getElementById("emptyResults").hidden=enough;
+  document.getElementById("resultIntro").textContent=enough?`${p.name} - ${n} réponses prises en compte${n<100?" - le profil reste partiel tant que le test n'est pas complété.":" - cartographie complète."}`:"Répondez à au moins 20 questions pour générer un premier profil.";
+  if(!enough)return;
+  const {axes,domainScores}=compute(p);
+  document.getElementById("profileTitle").textContent=profileName(axes);document.getElementById("profileCopy").textContent=profileText(axes,domainScores);
+  document.getElementById("axisResults").innerHTML=Object.entries(axes).map(([k,v])=>{const m=AXES[k],pp=pctFromAxis(v),right=v>=0,width=Math.abs(pp-50)*2,left=right?50:pp,label=`${v>=0?m.right:m.left} ${Math.round(Math.abs(v)*100)}%`;return `<div class="axis-row"><div class="axis-name">${m.name}</div><div class="axis-bar"><span class="axis-zero"></span><span class="axis-value" style="left:${left}%;width:${width/2}%"></span></div><div class="axis-label">${label}</div></div>`;}).join("");
+  document.getElementById("domainResults").innerHTML=Object.entries(domainScores).sort((a,b)=>b[1]-a[1]).map(([d,s])=>`<div class="domain-score"><div class="top"><span>${d}</span><b>${Math.round(s)} / 100</b></div><div class="bar"><span style="width:${s}%"></span></div></div>`).join("");
+  const answered=QUESTIONS.filter(q=>p.answers[q.id]!=null).map(q=>({...q,answer:p.answers[q.id]})),likes=[...answered].sort((a,b)=>b.answer-a.answer||a.id-b.id).slice(0,5),dislikes=[...answered].sort((a,b)=>a.answer-b.answer||a.id-b.id).slice(0,5);
+  document.getElementById("topLikes").innerHTML=likes.map(q=>`<div class="top-item">${q.text}<small>${q.domain} - ${q.answer}/5</small></div>`).join("");document.getElementById("topDislikes").innerHTML=dislikes.map(q=>`<div class="top-item">${q.text}<small>${q.domain} - ${q.answer}/5</small></div>`).join("");drawRadar(axes);
 }
 
 function drawRadar(axes){
-  const canvas=document.getElementById("radar");
-  const ctx=canvas.getContext("2d");
-  const keys=Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,8);
-  const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,R=165;
-  ctx.clearRect(0,0,W,H);
-  const fg=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#72d49b";
-  const line=getComputedStyle(document.documentElement).getPropertyValue("--line").trim()||"#252b27";
-  const text=getComputedStyle(document.documentElement).getPropertyValue("--muted").trim()||"#aaa99f";
-  for(let ring=1;ring<=4;ring++){
-    ctx.beginPath();
-    keys.forEach((_,i)=>{
-      const a=-Math.PI/2+i*2*Math.PI/keys.length;
-      const r=R*ring/4;
-      const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;
-      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
-    });
-    ctx.closePath();ctx.strokeStyle=line;ctx.lineWidth=1;ctx.stroke();
-  }
-  keys.forEach((_,i)=>{
-    const a=-Math.PI/2+i*2*Math.PI/keys.length;
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.strokeStyle=line;ctx.stroke();
-  });
-  ctx.beginPath();
-  keys.forEach(([k,v],i)=>{
-    const a=-Math.PI/2+i*2*Math.PI/keys.length;
-    const r=R*(.22+.78*Math.abs(v));
-    const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;
-    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
-  });
-  ctx.closePath();ctx.fillStyle=fg+"2e";ctx.fill();ctx.strokeStyle=fg;ctx.lineWidth=3;ctx.stroke();
-  ctx.fillStyle=text;ctx.font="13px Inter, sans-serif";ctx.textAlign="center";
-  keys.forEach(([k,v],i)=>{
-    const a=-Math.PI/2+i*2*Math.PI/keys.length;
-    const r=R+34;
-    const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r+4;
-    ctx.fillText(v>=0?AXES[k].right:AXES[k].left,x,y);
-  });
+  const canvas=document.getElementById("radar"),ctx=canvas.getContext("2d"),keys=Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,8),W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,R=165;ctx.clearRect(0,0,W,H);
+  const fg=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#72d49b",line=getComputedStyle(document.documentElement).getPropertyValue("--line").trim()||"#252b27",text=getComputedStyle(document.documentElement).getPropertyValue("--muted").trim()||"#aaa99f";
+  for(let ring=1;ring<=4;ring++){ctx.beginPath();keys.forEach((_,i)=>{const a=-Math.PI/2+i*2*Math.PI/keys.length,r=R*ring/4,x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.closePath();ctx.strokeStyle=line;ctx.lineWidth=1;ctx.stroke();}
+  keys.forEach((_,i)=>{const a=-Math.PI/2+i*2*Math.PI/keys.length;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.strokeStyle=line;ctx.stroke();});ctx.beginPath();keys.forEach(([k,v],i)=>{const a=-Math.PI/2+i*2*Math.PI/keys.length,r=R*(.22+.78*Math.abs(v)),x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.closePath();ctx.fillStyle=fg+"2e";ctx.fill();ctx.strokeStyle=fg;ctx.lineWidth=3;ctx.stroke();ctx.fillStyle=text;ctx.font="13px Inter, sans-serif";ctx.textAlign="center";keys.forEach(([k,v],i)=>{const a=-Math.PI/2+i*2*Math.PI/keys.length,r=R+34,x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r+4;ctx.fillText(v>=0?AXES[k].right:AXES[k].left,x,y);});
 }
 
-function exportData(){
-  const computed=compute();
-  const payload={
-    app:"Goûts 100",
-    exportedAt:new Date().toISOString(),
-    answered:answeredCount(),
-    profile:profileName(computed.axes),
-    axes:computed.axes,
-    domains:computed.domainScores,
-    answers:QUESTIONS.map(q=>({id:q.id,domain:q.domain,question:q.text,answer:state.answers[q.id]??null}))
+
+function encodeRoster(entries){
+  const bytes=new TextEncoder().encode(JSON.stringify(entries));let bin="";bytes.forEach(b=>bin+=String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"");
+}
+function decodeRoster(value){
+  try{
+    let s=value.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";
+    const bin=atob(s),bytes=Uint8Array.from(bin,c=>c.charCodeAt(0)),raw=JSON.parse(new TextDecoder().decode(bytes));
+    if(!Array.isArray(raw))return [];
+    // Compatibilité avec les anciens liens qui contenaient uniquement une liste de noms.
+    return raw.map(item=>typeof item==="string"?{id:null,name:safeName(item)}:{id:String(item?.id||""),name:safeName(item?.name)}).filter(x=>x.name);
+  }catch(e){return [];}
+}
+function applyRosterFromUrl(){
+  const token=new URLSearchParams(location.search).get("roster");if(!token)return 0;
+  const entries=decodeRoster(token);let added=0;
+  entries.forEach(entry=>{
+    const byId=entry.id?appState.participants[entry.id]:null;
+    const byName=Object.values(appState.participants).find(p=>p.name.toLocaleLowerCase()===entry.name.toLocaleLowerCase());
+    if(byId)return;
+    if(byName){
+      // Si un ancien participant du même nom existe sans réponses, il est remplacé par l'ID partagé.
+      if(entry.id && answeredCount(byName)===0){
+        delete appState.participants[byName.id];
+        byName.id=entry.id;appState.participants[entry.id]=byName;added++;
+      }
+      return;
+    }
+    const p=newParticipant(entry.name);if(entry.id)p.id=entry.id;appState.participants[p.id]=p;added++;
+  });
+  if(added)saveApp(false);return added;
+}
+async function shareRoster(){
+  const entries=Object.values(appState.participants).map(p=>({id:p.id,name:p.name})).filter(x=>x.name).sort((a,b)=>a.name.localeCompare(b.name,"fr"));
+  if(!entries.length){toast("Ajoutez d'abord les noms de l'équipe");return;}
+  const base=location.origin+location.pathname,url=`${base}?roster=${encodeRoster(entries)}`;
+  try{await navigator.clipboard.writeText(url);toast("Lien équipe copié");}
+  catch(e){window.prompt("Copiez ce lien et envoyez-le à l'équipe :",url);}
+}
+
+function participantExport(p){
+  const computed=compute(p);
+  return {schema:"gouts100-participant-v2",app:"Goûts 100",exportedAt:isoNow(),participant:{id:p.id,name:p.name,createdAt:p.createdAt,updatedAt:p.updatedAt,firstAnsweredAt:p.firstAnsweredAt,completedAt:p.completedAt,answered:answeredCount(p),profile:answeredCount(p)>=20?profileName(computed.axes):null,axes:computed.axes,domains:computed.domainScores,answers:Object.fromEntries(QUESTIONS.map(q=>[String(q.id).padStart(3,"0"),p.answers[q.id]??null]))}};
+}
+function downloadBlob(content,type,filename){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);}
+function exportParticipantJSON(p=participant()){if(!p)return;downloadBlob(JSON.stringify(participantExport(p),null,2),"application/json",`gouts100_${fileSafe(p.name)}.json`);toast("Fichier participant créé");}
+
+function allRecords(){
+  const map=new Map();
+  const keepBest=rec=>{
+    if(!rec?.participant?.id || !(rec.participant.answered||0))return;
+    const prev=map.get(rec.participant.id);
+    if(!prev){map.set(rec.participant.id,rec);return;}
+    const a=Number(rec.participant.answered||0),b=Number(prev.participant.answered||0);
+    const ta=Date.parse(rec.participant.updatedAt||rec.exportedAt||0)||0,tb=Date.parse(prev.participant.updatedAt||prev.exportedAt||0)||0;
+    if(a>b || (a===b && ta>tb))map.set(rec.participant.id,rec);
   };
-  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url;a.download="gouts-100-resultats.json";a.click();
-  URL.revokeObjectURL(url);
-  toast("Export JSON créé");
+  Object.values(appState.imported).forEach(keepBest);
+  Object.values(appState.participants).forEach(p=>{if(answeredCount(p)>0)keepBest(participantExport(p));});
+  return [...map.values()].sort((a,b)=>(a.participant.name||"").localeCompare(b.participant.name||"","fr"));
 }
-
-function summaryText(){
-  const {axes,domainScores}=compute();
-  const topAxes=Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,4)
-    .map(([k,v])=>`${AXES[k].name}: ${v>=0?AXES[k].right:AXES[k].left} (${Math.round(Math.abs(v)*100)}%)`);
-  const topDomains=Object.entries(domainScores).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([d,s])=>`${d} (${Math.round(s)}/100)`);
-  return `Goûts 100 - ${profileName(axes)}\n${topAxes.join("\n")}\nDomaines principaux: ${topDomains.join(", ")}\n${profileText(axes,domainScores)}`;
+function csvEscape(v){if(v==null)return "";const s=String(v).replace(/"/g,'""');return /[";\n\r]/.test(s)?`"${s}"`:s;}
+function wideCSV(records=allRecords()){
+  const axisKeys=Object.keys(AXES),headers=["participant_id","nom","created_at","updated_at","first_answered_at","completed_at","n_reponses","profil",...axisKeys.map(k=>`axe_${k}`),...domains.map((d,i)=>`domaine_${String(i+1).padStart(2,"0")}_${d.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"_")}`),...QUESTIONS.map(q=>`Q${String(q.id).padStart(3,"0")}`)];
+  const rows=records.map(r=>{const p=r.participant;return [p.id,p.name,p.createdAt,p.updatedAt,p.firstAnsweredAt,p.completedAt,p.answered,p.profile,...axisKeys.map(k=>p.axes?.[k]??""),...domains.map(d=>p.domains?.[d]??""),...QUESTIONS.map(q=>p.answers?.[String(q.id).padStart(3,"0")]??"")];});
+  return "\ufeff"+[headers,...rows].map(row=>row.map(csvEscape).join(";")).join("\r\n");
 }
+function longCSV(records=allRecords()){
+  const headers=["participant_id","nom","question_id","domaine","question","reponse"];
+  const rows=[];records.forEach(r=>{const p=r.participant;QUESTIONS.forEach(q=>rows.push([p.id,p.name,q.id,q.domain,q.text,p.answers?.[String(q.id).padStart(3,"0")]??""]));});
+  return "\ufeff"+[headers,...rows].map(row=>row.map(csvEscape).join(";")).join("\r\n");
+}
+function exportCorpusJSON(){const payload={schema:"gouts100-corpus-v2",app:"Goûts 100",exportedAt:isoNow(),n:allRecords().length,records:allRecords()};downloadBlob(JSON.stringify(payload,null,2),"application/json","gouts100_corpus.json");toast("Corpus JSON créé");}
 
-document.getElementById("copyBtn").addEventListener("click",async()=>{
-  try{await navigator.clipboard.writeText(summaryText());toast("Résumé copié");}
-  catch(e){toast("Copie non disponible dans ce navigateur");}
-});
-document.getElementById("downloadBtn").addEventListener("click",exportData);
-document.getElementById("restartBtn").addEventListener("click",()=>{
-  if(confirm("Effacer toutes les réponses et recommencer ?")){
-    state.current=0;state.answers={};saveState();renderQuestion();goToPage("quiz");
+function summaryText(){const p=participant(),{axes,domainScores}=compute(p),topAxes=Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,4).map(([k,v])=>`${AXES[k].name}: ${v>=0?AXES[k].right:AXES[k].left} (${Math.round(Math.abs(v)*100)}%)`),topDomains=Object.entries(domainScores).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([d,s])=>`${d} (${Math.round(s)}/100)`);return `Goûts 100 - ${p.name}\nProfil: ${profileName(axes)}\n${topAxes.join("\n")}\nDomaines principaux: ${topDomains.join(", ")}\n${profileText(axes,domainScores)}`;}
+
+document.getElementById("copyBtn").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(summaryText());toast("Résumé copié");}catch(e){toast("Copie non disponible dans ce navigateur");}});
+document.getElementById("downloadBtn").addEventListener("click",()=>exportParticipantJSON());
+document.getElementById("restartBtn").addEventListener("click",()=>{const p=participant();if(p&&confirm(`Effacer toutes les réponses de ${p.name} et recommencer ?`)){p.current=0;p.answers={};p.firstAnsweredAt=null;p.completedAt=null;p.updatedAt=isoNow();saveApp();renderQuestion();goToPage("quiz");}});
+
+document.getElementById("startBtn").addEventListener("click",()=>{if(!requireParticipant())return;const p=participant();if(answeredCount(p)&&!confirm(`Recommencer le test de ${p.name} ? Les réponses actuelles seront effacées.`))return;p.current=0;p.answers={};p.firstAnsweredAt=null;p.completedAt=null;p.updatedAt=isoNow();saveApp();goToPage("quiz");});
+document.getElementById("continueBtn").addEventListener("click",()=>{if(requireParticipant())goToPage("quiz");});
+document.getElementById("resumeBtn").addEventListener("click",()=>{if(requireParticipant())goToPage("quiz");});
+
+// Gestion des participants
+const participantModal=document.getElementById("participantModal"),bulkNamesModal=document.getElementById("bulkNamesModal");
+function openParticipantModal(){participantModal.classList.add("open");participantModal.setAttribute("aria-hidden","false");setTimeout(()=>document.getElementById("participantNameInput").focus(),30);}
+function closeParticipantModal(){participantModal.classList.remove("open");participantModal.setAttribute("aria-hidden","true");}
+function openBulkNamesModal(){bulkNamesModal.classList.add("open");bulkNamesModal.setAttribute("aria-hidden","false");}
+function closeBulkNamesModal(){bulkNamesModal.classList.remove("open");bulkNamesModal.setAttribute("aria-hidden","true");}
+document.getElementById("addParticipantBtn").addEventListener("click",openParticipantModal);document.getElementById("closeParticipantModal").addEventListener("click",closeParticipantModal);
+document.getElementById("saveParticipantBtn").addEventListener("click",()=>{const v=document.getElementById("participantNameInput").value;if(!safeName(v)){toast("Saisissez un nom");return;}addParticipant(v,true);document.getElementById("participantNameInput").value="";closeParticipantModal();toast("Participant ajouté");});
+document.getElementById("participantNameInput").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("saveParticipantBtn").click();});
+document.getElementById("bulkNamesBtn").addEventListener("click",openBulkNamesModal);document.getElementById("closeBulkNamesModal").addEventListener("click",closeBulkNamesModal);
+document.getElementById("saveBulkNamesBtn").addEventListener("click",()=>{const raw=document.getElementById("bulkNamesInput").value,names=raw.split(/\r?\n|;/).map(safeName).filter(Boolean);if(!names.length){toast("Aucun nom détecté");return;}names.forEach(n=>addParticipant(n,false));document.getElementById("bulkNamesInput").value="";closeBulkNamesModal();toast(`${names.length} nom(s) ajouté(s)`);});
+[participantModal,bulkNamesModal].forEach(m=>m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("open");}));
+
+// Import et corpus
+const importFiles=document.getElementById("importFiles"),fileDrop=document.getElementById("fileDrop");
+fileDrop.addEventListener("click",()=>importFiles.click());
+fileDrop.addEventListener("dragover",e=>{e.preventDefault();fileDrop.style.borderColor="var(--accent)";});
+fileDrop.addEventListener("dragleave",()=>fileDrop.style.borderColor="");
+fileDrop.addEventListener("drop",e=>{e.preventDefault();fileDrop.style.borderColor="";handleImportFiles(e.dataTransfer.files);});
+importFiles.addEventListener("change",e=>handleImportFiles(e.target.files));
+async function handleImportFiles(files){
+  let ok=0,bad=0;
+  for(const f of [...files]){
+    try{
+      const obj=JSON.parse(await f.text());
+      const records=obj.schema==="gouts100-corpus-v2"&&Array.isArray(obj.records)?obj.records:[obj];
+      for(const rec of records){if(rec?.schema==="gouts100-participant-v2"&&rec.participant?.id&&rec.participant?.name){appState.imported[rec.participant.id]=rec;ok++;}else bad++;}
+    }catch(e){bad++;}
   }
-});
-
-document.getElementById("startBtn").addEventListener("click",()=>{state.current=0;saveState();goToPage("quiz")});
-document.getElementById("continueBtn").addEventListener("click",()=>goToPage("quiz"));
-document.getElementById("resumeBtn").addEventListener("click",()=>goToPage("quiz"));
-
-const modal=document.getElementById("settingsModal");
-document.getElementById("settingsBtn").addEventListener("click",()=>{modal.classList.add("open");modal.setAttribute("aria-hidden","false")});
-document.getElementById("closeSettings").addEventListener("click",closeSettings);
-modal.addEventListener("click",e=>{if(e.target===modal)closeSettings()});
-function closeSettings(){modal.classList.remove("open");modal.setAttribute("aria-hidden","true")}
-
-document.getElementById("fontDown").addEventListener("click",()=>{state.settings.font=Math.max(14,state.settings.font-1);applySettings();saveState()});
-document.getElementById("fontUp").addEventListener("click",()=>{state.settings.font=Math.min(20,state.settings.font+1);applySettings();saveState()});
-document.getElementById("contrastSwitch").addEventListener("click",()=>{state.settings.contrast=!state.settings.contrast;applySettings();saveState()});
-document.getElementById("motionSwitch").addEventListener("click",()=>{state.settings.motion=!state.settings.motion;applySettings();saveState()});
-
-function applySettings(){
-  document.documentElement.style.setProperty("--fs",`${state.settings.font}px`);
-  document.body.classList.toggle("high-contrast",!!state.settings.contrast);
-  document.body.classList.toggle("reduce-motion",!!state.settings.motion);
-  document.getElementById("contrastSwitch")?.classList.toggle("on",!!state.settings.contrast);
-  document.getElementById("motionSwitch")?.classList.toggle("on",!!state.settings.motion);
+  importFiles.value="";saveApp();toast(`${ok} session(s) importée(s)${bad?` - ${bad} fichier(s) ignoré(s)`:""}`);
 }
 
-function toast(msg){
-  const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");
-  setTimeout(()=>t.classList.remove("show"),1800);
+document.getElementById("exportWideBtn").addEventListener("click",()=>{const r=allRecords();if(!r.length){toast("Aucune donnée à exporter");return;}downloadBlob(wideCSV(r),"text/csv;charset=utf-8","gouts100_corpus_large.csv");toast("CSV large créé");});
+document.getElementById("exportLongBtn").addEventListener("click",()=>{const r=allRecords();if(!r.length){toast("Aucune donnée à exporter");return;}downloadBlob(longCSV(r),"text/csv;charset=utf-8","gouts100_corpus_long.csv");toast("CSV long créé");});
+document.getElementById("exportCorpusJsonBtn").addEventListener("click",()=>{if(!allRecords().length){toast("Aucune donnée à exporter");return;}exportCorpusJSON();});
+document.getElementById("shareRosterBtn").addEventListener("click",shareRoster);
+
+function updateDataPage(){
+  const local=Object.values(appState.participants).sort((a,b)=>a.name.localeCompare(b.name,"fr")),imported=Object.values(appState.imported).sort((a,b)=>(a.participant?.name||"").localeCompare(b.participant?.name||"","fr")),all=allRecords();
+  document.getElementById("statLocal").textContent=local.length;document.getElementById("statImported").textContent=imported.length;document.getElementById("statComplete").textContent=all.filter(r=>r.participant.answered===100).length;document.getElementById("statTotalAnswers").textContent=all.reduce((s,r)=>s+(r.participant.answered||0),0);
+  document.getElementById("localParticipantRows").innerHTML=local.length?local.map(p=>`<div class="data-row"><div><strong>${escapeHtml(p.name)}${p.id===appState.activeParticipantId?'<span class="tag">ACTIF</span>':''}</strong><small>${answeredCount(p)}/100 réponses - dernière modification ${formatDate(p.updatedAt)}</small></div><div class="row-actions"><button onclick="selectLocalFromData('${p.id}')">Sélectionner</button><button onclick="exportLocalById('${p.id}')">JSON</button><button class="danger-btn" onclick="deleteLocalById('${p.id}')">Supprimer</button></div></div>`).join(""):'<div class="note">Aucune session locale.</div>';
+  document.getElementById("importedParticipantRows").innerHTML=imported.length?imported.map(r=>{const p=r.participant;return `<div class="data-row"><div><strong>${escapeHtml(p.name)}</strong><small>${p.answered||0}/100 réponses - importé dans le corpus</small></div><div class="row-actions"><button class="danger-btn" onclick="deleteImportedById('${p.id}')">Retirer</button></div></div>`;}).join(""):'<div class="note">Aucun fichier importé.</div>';
 }
+window.selectLocalFromData=id=>{selectParticipant(id);goToPage("home");toast("Participant sélectionné");};
+window.exportLocalById=id=>{const p=appState.participants[id];if(p)exportParticipantJSON(p);};
+window.deleteLocalById=id=>{const p=appState.participants[id];if(!p)return;if(confirm(`Supprimer la session locale de ${p.name} ?`)){delete appState.participants[id];if(appState.activeParticipantId===id)appState.activeParticipantId=null;saveApp();renderResults();}};
+window.deleteImportedById=id=>{delete appState.imported[id];saveApp();};
 
-window.addEventListener("resize",()=>{if(!document.getElementById("resultsContent").hidden)renderResults()});
+// Personnalisation
+const settingsModal=document.getElementById("settingsModal");
+document.getElementById("settingsBtn").addEventListener("click",()=>{settingsModal.classList.add("open");settingsModal.setAttribute("aria-hidden","false")});
+document.getElementById("closeSettings").addEventListener("click",closeSettings);settingsModal.addEventListener("click",e=>{if(e.target===settingsModal)closeSettings()});
+function closeSettings(){settingsModal.classList.remove("open");settingsModal.setAttribute("aria-hidden","true")}
+document.getElementById("fontDown").addEventListener("click",()=>{appState.settings.font=Math.max(14,appState.settings.font-1);applySettings();saveApp()});document.getElementById("fontUp").addEventListener("click",()=>{appState.settings.font=Math.min(20,appState.settings.font+1);applySettings();saveApp()});document.getElementById("contrastSwitch").addEventListener("click",()=>{appState.settings.contrast=!appState.settings.contrast;applySettings();saveApp()});document.getElementById("motionSwitch").addEventListener("click",()=>{appState.settings.motion=!appState.settings.motion;applySettings();saveApp()});
+function applySettings(){document.documentElement.style.setProperty("--fs",`${appState.settings.font}px`);document.body.classList.toggle("high-contrast",!!appState.settings.contrast);document.body.classList.toggle("reduce-motion",!!appState.settings.motion);document.getElementById("contrastSwitch")?.classList.toggle("on",!!appState.settings.contrast);document.getElementById("motionSwitch")?.classList.toggle("on",!!appState.settings.motion);}
+function escapeHtml(s){return String(s??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));}
+function formatDate(v){if(!v)return "date inconnue";try{return new Intl.DateTimeFormat("fr-FR",{dateStyle:"short",timeStyle:"short"}).format(new Date(v));}catch(e){return v;}}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800);}
+window.addEventListener("resize",()=>{if(!document.getElementById("resultsContent").hidden&&participant())renderResults()});
 
-loadState();
-renderDomains();
-updateGlobalProgress();
-renderQuestion();
+loadState();const rosterAdded=applyRosterFromUrl();renderDomains();updateParticipantUI();updateGlobalProgress();updateDataPage();if(participant())renderQuestion();if(rosterAdded)toast(`${rosterAdded} nom(s) chargé(s) depuis le lien équipe`);
+
 </script>
 </body>
 </html>
