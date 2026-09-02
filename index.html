@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080a09">
+<title>Goûts 100 - Cartographie personnelle</title>
+<style>
+:root{
+  --bg:#080a09;
+  --panel:#0e1110;
+  --panel-2:#131714;
+  --panel-3:#191e1a;
+  --text:#f2efe7;
+  --muted:#aaa99f;
+  --line:#252b27;
+  --accent:#72d49b;
+  --accent-soft:rgba(114,212,155,.14);
+  --danger:#ff8e8e;
+  --shadow:0 18px 50px rgba(0,0,0,.34);
+  --radius:22px;
+  --fs:16px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(114,212,155,.07), transparent 28%),
+    radial-gradient(circle at 12% 84%, rgba(114,212,155,.045), transparent 24%),
+    var(--bg);
+  color:var(--text);
+  font-family:Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size:var(--fs);
+  min-height:100vh;
+}
+button,input{font:inherit}
+button{color:inherit}
+::selection{background:var(--accent);color:#07110b}
+.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+.sidebar{
+  position:sticky;top:0;height:100vh;
+  padding:24px 18px;border-right:1px solid var(--line);
+  background:rgba(8,10,9,.88);backdrop-filter:blur(18px);
+  display:flex;flex-direction:column;z-index:20
+}
+.brand{display:flex;align-items:center;gap:12px;padding:8px 8px 22px}
+.brand-mark{
+  width:42px;height:42px;border-radius:14px;
+  display:grid;place-items:center;background:var(--accent);color:#07110b;
+  font-weight:900;letter-spacing:-.04em
+}
+.brand strong{display:block;font-size:1rem}
+.brand span{display:block;color:var(--muted);font-size:.78rem;margin-top:2px}
+.nav{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.nav button{
+  width:100%;border:1px solid transparent;background:transparent;text-align:left;
+  padding:13px 14px;border-radius:14px;color:var(--muted);cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;transition:.2s ease
+}
+.nav button:hover,.nav button.active{background:var(--panel-2);border-color:var(--line);color:var(--text)}
+.nav button.active::after{content:"";width:7px;height:7px;border-radius:999px;background:var(--accent)}
+.side-progress{margin:24px 8px 0}
+.side-progress label{display:flex;justify-content:space-between;color:var(--muted);font-size:.78rem;margin-bottom:9px}
+.progress-track{height:7px;border-radius:999px;background:#171b18;overflow:hidden}
+.progress-fill{height:100%;width:0;background:var(--accent);border-radius:inherit;transition:width .25s ease}
+.sidebar-bottom{margin-top:auto;display:grid;gap:8px}
+.mini-btn{
+  border:1px solid var(--line);background:var(--panel);padding:11px 12px;border-radius:13px;
+  cursor:pointer;color:var(--muted)
+}
+.mini-btn:hover{color:var(--text);border-color:#3c463f}
+main{min-width:0}
+.page{display:none;min-height:100vh;padding:48px clamp(24px,5vw,76px) 72px}
+.page.active{display:block}
+.shell{max-width:1180px;margin:0 auto}
+.eyebrow{color:var(--accent);text-transform:uppercase;letter-spacing:.16em;font-size:.72rem;font-weight:800}
+h1{font-size:clamp(2.6rem,6vw,5.9rem);line-height:.94;letter-spacing:-.065em;margin:14px 0 20px;max-width:970px}
+h2{font-size:clamp(2rem,4vw,3.4rem);line-height:1;letter-spacing:-.045em;margin:10px 0 18px}
+h3{margin:0 0 10px;font-size:1.04rem}
+.lead{font-size:clamp(1.03rem,1.8vw,1.28rem);line-height:1.65;color:#c8c6bd;max-width:790px}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+.primary,.secondary,.ghost{
+  border-radius:14px;padding:13px 18px;cursor:pointer;border:1px solid var(--line);font-weight:750;
+  transition:.2s ease
+}
+.primary{background:var(--accent);border-color:var(--accent);color:#07110b}
+.primary:hover{transform:translateY(-1px);filter:brightness(1.06)}
+.secondary{background:var(--panel-2)}
+.ghost{background:transparent;color:var(--muted)}
+.primary:disabled,.secondary:disabled,.ghost:disabled{opacity:.38;cursor:not-allowed;transform:none}
+.hero-grid{display:grid;grid-template-columns:1.4fr .9fr;gap:22px;margin-top:56px}
+.card{
+  background:linear-gradient(180deg,rgba(19,23,20,.92),rgba(13,16,14,.92));
+  border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)
+}
+.card-pad{padding:24px}
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.stat{background:var(--panel-2);border:1px solid var(--line);border-radius:17px;padding:19px}
+.stat b{display:block;font-size:1.75rem;letter-spacing:-.04em}
+.stat span{color:var(--muted);font-size:.84rem}
+.domain-list{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:15px}
+.domain-pill{padding:10px 11px;border:1px solid var(--line);background:#101310;border-radius:12px;color:#c7c7be;font-size:.84rem}
+.note{margin-top:20px;color:var(--muted);font-size:.82rem;line-height:1.55}
+.quiz-head{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:18px}
+.quiz-count{color:var(--muted);font-variant-numeric:tabular-nums}
+.domain-badge{display:inline-flex;padding:8px 11px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:.78rem}
+.question-card{padding:clamp(24px,4vw,44px);min-height:500px;display:flex;flex-direction:column}
+.q-number{color:var(--muted);font-size:.78rem;letter-spacing:.12em;text-transform:uppercase}
+.question-text{font-size:clamp(1.55rem,3.4vw,2.55rem);line-height:1.18;letter-spacing:-.035em;margin:18px 0 34px;max-width:920px}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:auto}
+.choice{
+  min-height:94px;border:1px solid var(--line);background:var(--panel-2);border-radius:17px;cursor:pointer;
+  padding:14px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+  color:#d1d0c8;transition:.18s ease
+}
+.choice:hover{border-color:#4a584f;background:#171d19;transform:translateY(-2px)}
+.choice.selected{border-color:var(--accent);background:var(--accent-soft);color:var(--text)}
+.choice strong{font-size:1.16rem}
+.choice span{font-size:.72rem;color:var(--muted);text-align:center}
+.quiz-footer{display:flex;justify-content:space-between;gap:12px;margin-top:18px}
+.quiz-footer .right{display:flex;gap:10px}
+.section-progress{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin:18px 0 24px}
+.section-seg{height:5px;border-radius:999px;background:#171b18;overflow:hidden}
+.section-seg span{display:block;height:100%;width:0;background:var(--accent);transition:.2s}
+.results-hero{display:grid;grid-template-columns:1.15fr .85fr;gap:20px;align-items:stretch;margin:28px 0 26px}
+.profile-card{padding:30px}
+.profile-title{font-size:clamp(2.2rem,5vw,4.4rem);letter-spacing:-.055em;line-height:.95;margin:12px 0 18px}
+.profile-copy{font-size:1.03rem;color:#c9c8c0;line-height:1.65}
+.score-ring{
+  min-height:320px;padding:16px;display:grid;place-items:center;position:relative
+}
+.score-ring canvas{width:100%;max-width:420px;aspect-ratio:1}
+.results-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.result-card{padding:24px}
+.axis-row{display:grid;grid-template-columns:120px 1fr 92px;gap:12px;align-items:center;margin:15px 0}
+.axis-name{font-size:.84rem;color:#d6d4cb}
+.axis-bar{height:10px;border-radius:999px;background:#1b211d;position:relative;overflow:hidden}
+.axis-zero{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#4a504c}
+.axis-value{position:absolute;top:0;bottom:0;border-radius:999px;background:var(--accent)}
+.axis-label{font-size:.73rem;color:var(--muted);text-align:right}
+.domain-score{margin:14px 0}
+.domain-score .top{display:flex;justify-content:space-between;gap:10px;font-size:.84rem}
+.domain-score .bar{margin-top:8px;height:9px;background:#1b211d;border-radius:999px;overflow:hidden}
+.domain-score .bar span{display:block;height:100%;background:var(--accent);border-radius:inherit}
+.top-list{display:grid;gap:9px;margin-top:12px}
+.top-item{padding:13px 14px;background:var(--panel-2);border:1px solid var(--line);border-radius:13px;line-height:1.38}
+.top-item small{display:block;color:var(--muted);margin-top:5px}
+.actions-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:28px}
+.about-grid .card{padding:25px}
+.kbd{display:inline-grid;place-items:center;min-width:28px;height:26px;border-radius:7px;border:1px solid #434943;background:#171a18;color:#d6d5ce;font-size:.75rem}
+.modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100;display:none;place-items:center;padding:20px
+}
+.modal.open{display:grid}
+.modal-box{width:min(560px,100%);background:#101310;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:24px}
+.modal-head{display:flex;justify-content:space-between;gap:16px;align-items:center}
+.icon-btn{border:1px solid var(--line);background:var(--panel-2);width:40px;height:40px;border-radius:12px;cursor:pointer}
+.setting{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 0;border-top:1px solid var(--line)}
+.setting:first-of-type{margin-top:14px}
+.switch{width:48px;height:28px;background:#242a26;border:none;border-radius:999px;padding:3px;cursor:pointer}
+.switch i{display:block;width:22px;height:22px;border-radius:50%;background:#777f79;transition:.2s}
+.switch.on{background:var(--accent)}
+.switch.on i{transform:translateX(20px);background:#07110b}
+.font-controls{display:flex;gap:8px}
+.font-controls button{width:38px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--panel-2);cursor:pointer}
+.toast{
+  position:fixed;right:22px;bottom:22px;background:#f0eee6;color:#101310;padding:12px 15px;border-radius:12px;
+  transform:translateY(20px);opacity:0;pointer-events:none;transition:.2s;z-index:200;font-weight:750;font-size:.84rem
+}
+.toast.show{opacity:1;transform:translateY(0)}
+body.high-contrast{
+  --bg:#000;--panel:#080808;--panel-2:#0d0d0d;--panel-3:#111;--text:#fff;--muted:#d7d7d7;--line:#555;--accent:#8cffb4
+}
+body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+@media(max-width:950px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:sticky;height:auto;top:0;border-right:0;border-bottom:1px solid var(--line);padding:10px 14px;display:grid;grid-template-columns:auto 1fr auto;align-items:center}
+  .brand{padding:0}.brand span{display:none}.brand-mark{width:36px;height:36px;border-radius:11px}
+  .nav{flex-direction:row;justify-content:center;margin:0;gap:4px}.nav button{width:auto;padding:9px 10px;font-size:.78rem}.nav button::after{display:none}
+  .side-progress{display:none}.sidebar-bottom{margin:0}.sidebar-bottom .mini-btn:first-child{display:none}
+  .page{padding-top:34px}
+  .hero-grid,.results-hero,.results-grid,.about-grid{grid-template-columns:1fr}
+}
+@media(max-width:680px){
+  .nav button span{display:none}
+  .nav button{min-width:42px;text-align:center}
+  .domain-list{grid-template-columns:1fr}
+  .scale{grid-template-columns:1fr}
+  .choice{min-height:58px;flex-direction:row;justify-content:flex-start;padding:10px 14px}
+  .choice span{text-align:left}
+  .question-card{min-height:0}
+  .axis-row{grid-template-columns:92px 1fr}.axis-label{grid-column:2;text-align:left;margin-top:-7px}
+  .quiz-footer{flex-direction:column}.quiz-footer .right{display:grid;grid-template-columns:1fr 1fr}.quiz-footer button{width:100%}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">G100</div>
+      <div><strong>Goûts 100</strong><span>Cartographie personnelle</span></div>
+    </div>
+    <nav class="nav">
+      <button class="active" data-page="home" title="Accueil">Accueil <span>01</span></button>
+      <button data-page="quiz" title="Test">Test <span>02</span></button>
+      <button data-page="results" title="Résultats">Résultats <span>03</span></button>
+      <button data-page="about" title="À propos">À propos <span>04</span></button>
+    </nav>
+    <div class="side-progress">
+      <label><span>Progression</span><b id="sideProgressText">0 / 100</b></label>
+      <div class="progress-track"><div class="progress-fill" id="sideProgressFill"></div></div>
+    </div>
+    <div class="sidebar-bottom">
+      <button class="mini-btn" id="resumeBtn">Reprendre le test</button>
+      <button class="mini-btn" id="settingsBtn">Personnalisation</button>
+    </div>
+  </aside>
+
+  <main>
+    <section class="page active" id="home">
+      <div class="shell">
+        <div class="eyebrow">Test de goûts - 100 questions</div>
+        <h1>Cartographier ce que vous aimez, sans vous enfermer dans une case.</h1>
+        <p class="lead">Goûts 100 explore dix domaines de préférence et les relie à plusieurs tendances transversales : recherche de nouveauté, intensité, structure, sociabilité, rapport à la nature, esthétique, numérique, énergie, curiosité culturelle, richesse sensorielle et créativité.</p>
+        <div class="hero-actions">
+          <button class="primary" id="startBtn">Commencer les 100 questions</button>
+          <button class="secondary" id="continueBtn">Continuer ma session</button>
+        </div>
+
+        <div class="hero-grid">
+          <div class="card card-pad">
+            <div class="eyebrow">Ce qui est exploré</div>
+            <div class="domain-list" id="domainList"></div>
+            <p class="note">Les résultats sont descriptifs et exploratoires. Ce test n'est ni un instrument psychométrique validé, ni un outil clinique, ni une mesure de personnalité.</p>
+          </div>
+          <div class="card card-pad">
+            <div class="stat-grid">
+              <div class="stat"><b>100</b><span>questions</span></div>
+              <div class="stat"><b>10</b><span>domaines</span></div>
+              <div class="stat"><b>11</b><span>axes transversaux</span></div>
+              <div class="stat"><b>Local</b><span>aucune donnée envoyée</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="quiz">
+      <div class="shell">
+        <div class="quiz-head">
+          <div>
+            <div class="eyebrow">Votre cartographie</div>
+            <h2>100 préférences, une vue d'ensemble.</h2>
+          </div>
+          <div class="quiz-count" id="quizCount">Question 1 / 100</div>
+        </div>
+
+        <div class="section-progress" id="sectionProgress"></div>
+
+        <div class="card question-card">
+          <div class="domain-badge" id="domainBadge">Alimentation</div>
+          <div class="q-number" id="qNumber">Question 01</div>
+          <div class="question-text" id="questionText"></div>
+
+          <div class="scale" id="scale">
+            <button class="choice" data-value="1"><strong>1</strong><span>Pas du tout</span></button>
+            <button class="choice" data-value="2"><strong>2</strong><span>Peu</span></button>
+            <button class="choice" data-value="3"><strong>3</strong><span>Mitigé</span></button>
+            <button class="choice" data-value="4"><strong>4</strong><span>Beaucoup</span></button>
+            <button class="choice" data-value="5"><strong>5</strong><span>Énormément</span></button>
+          </div>
+        </div>
+
+        <div class="quiz-footer">
+          <button class="ghost" id="skipBtn">Laisser sans réponse</button>
+          <div class="right">
+            <button class="secondary" id="prevBtn">Précédente</button>
+            <button class="primary" id="nextBtn">Suivante</button>
+          </div>
+        </div>
+        <p class="note">Raccourcis : <span class="kbd">1</span> à <span class="kbd">5</span> pour répondre, <span class="kbd">←</span> et <span class="kbd">→</span> pour naviguer.</p>
+      </div>
+    </section>
+
+    <section class="page" id="results">
+      <div class="shell">
+        <div class="eyebrow">Résultat final</div>
+        <h2>Votre carte de goûts</h2>
+        <p class="lead" id="resultIntro">Répondez au test pour générer votre profil.</p>
+
+        <div id="resultsContent" hidden>
+          <div class="results-hero">
+            <div class="card profile-card">
+              <div class="eyebrow">Profil synthétique</div>
+              <div class="profile-title" id="profileTitle"></div>
+              <div class="profile-copy" id="profileCopy"></div>
+              <div class="actions-row">
+                <button class="primary" id="copyBtn">Copier mon résumé</button>
+                <button class="secondary" id="downloadBtn">Exporter mes résultats</button>
+                <button class="ghost" id="restartBtn">Recommencer</button>
+              </div>
+            </div>
+            <div class="card score-ring">
+              <canvas id="radar" width="460" height="460" aria-label="Radar des dimensions principales"></canvas>
+            </div>
+          </div>
+
+          <div class="results-grid">
+            <div class="card result-card">
+              <h3>Axes transversaux</h3>
+              <p class="note" style="margin-top:0">Chaque axe est bipolaire. La barre indique vers quel pôle vos réponses tendent.</p>
+              <div id="axisResults"></div>
+            </div>
+            <div class="card result-card">
+              <h3>Affinité par domaine</h3>
+              <p class="note" style="margin-top:0">Il s'agit de la moyenne de vos réponses dans chaque domaine, et non d'un classement absolu de vos goûts.</p>
+              <div id="domainResults"></div>
+            </div>
+          </div>
+
+          <div class="results-grid">
+            <div class="card result-card">
+              <h3>Vos préférences les plus marquées</h3>
+              <div class="top-list" id="topLikes"></div>
+            </div>
+            <div class="card result-card">
+              <h3>Ce qui vous attire le moins</h3>
+              <div class="top-list" id="topDislikes"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-pad" id="emptyResults">
+          <h3>Pas encore assez de réponses.</h3>
+          <p class="lead" style="font-size:1rem">Les résultats deviennent disponibles à partir de 20 réponses et sont plus interprétables lorsque les 100 questions sont complétées.</p>
+          <button class="primary" onclick="goToPage('quiz')">Aller au test</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="about">
+      <div class="shell">
+        <div class="eyebrow">À propos</div>
+        <h2>Un test de préférences, pas une étiquette.</h2>
+        <p class="lead">L'objectif est de produire une synthèse lisible de goûts déclarés dans des domaines très différents, puis d'identifier les tendances qui reviennent d'un domaine à l'autre.</p>
+        <div class="about-grid">
+          <div class="card">
+            <h3>Confidentialité</h3>
+            <p class="note">Toutes les réponses sont enregistrées uniquement dans le stockage local de votre navigateur. Aucun compte, serveur, cookie publicitaire ou service externe n'est utilisé.</p>
+          </div>
+          <div class="card">
+            <h3>Interprétation</h3>
+            <p class="note">Les scores ne doivent pas être interprétés comme des traits psychologiques stables. Ils reflètent une sélection de préférences à un moment donné et peuvent varier avec le contexte.</p>
+          </div>
+          <div class="card">
+            <h3>Échelle</h3>
+            <p class="note">Chaque affirmation est évaluée de 1 - "Pas du tout" à 5 - "Énormément". Certaines affirmations pointent vers des pôles opposés afin d'éviter qu'un score élevé soit systématiquement associé au même style de réponse.</p>
+          </div>
+          <div class="card">
+            <h3>Résultat</h3>
+            <p class="note">Le profil final combine les axes les plus saillants, les domaines les plus appréciés et les réponses extrêmes. Il s'agit d'une description dynamique et non d'une catégorie fermée.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="settingsModal" aria-hidden="true">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div><div class="eyebrow">Interface</div><h3 style="margin-top:5px">Personnalisation</h3></div>
+      <button class="icon-btn" id="closeSettings">×</button>
+    </div>
+    <div class="setting">
+      <div><strong>Taille du texte</strong><div class="note" style="margin:3px 0 0">Ajuster l'échelle générale.</div></div>
+      <div class="font-controls"><button id="fontDown">A-</button><button id="fontUp">A+</button></div>
+    </div>
+    <div class="setting">
+      <div><strong>Contraste renforcé</strong><div class="note" style="margin:3px 0 0">Noir plus profond et séparateurs plus visibles.</div></div>
+      <button class="switch" id="contrastSwitch"><i></i></button>
+    </div>
+    <div class="setting">
+      <div><strong>Réduire les animations</strong><div class="note" style="margin:3px 0 0">Désactive les transitions de l'interface.</div></div>
+      <button class="switch" id="motionSwitch"><i></i></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const QUESTIONS = [{"id":1,"domain":"Alimentation","text":"Je préfère découvrir un plat inconnu plutôt que reprendre une valeur sûre.","traits":{"novelty":1,"sensory":0.4}},{"id":2,"domain":"Alimentation","text":"Les saveurs très épicées ou très marquées m'attirent.","traits":{"intensity":1,"sensory":0.8}},{"id":3,"domain":"Alimentation","text":"J'aime les repas simples, familiers et réconfortants.","traits":{"novelty":-1,"intensity":-0.4}},{"id":4,"domain":"Alimentation","text":"La présentation visuelle d'un plat compte presque autant que son goût.","traits":{"aesthetic":1,"sensory":0.4}},{"id":5,"domain":"Alimentation","text":"J'aime prendre le temps de comparer les textures, les arômes et les nuances d'un plat.","traits":{"sensory":1,"energy":-0.3}},{"id":6,"domain":"Alimentation","text":"Je préfère les repas conviviaux à plusieurs aux repas pris seul.","traits":{"social":1}},{"id":7,"domain":"Alimentation","text":"Les marchés, produits locaux et aliments de saison m'attirent.","traits":{"nature":1,"digital":-0.2}},{"id":8,"domain":"Alimentation","text":"J'apprécie la cuisine très codifiée, précise et technique.","traits":{"structure":1,"aesthetic":0.5}},{"id":9,"domain":"Alimentation","text":"Je suis attiré par les adresses confidentielles ou les cuisines peu connues.","traits":{"culture":1,"novelty":0.6}},{"id":10,"domain":"Alimentation","text":"Je préfère improviser avec ce qu'il y a plutôt que suivre une recette à la lettre.","traits":{"structure":-1,"creativity":1}},{"id":11,"domain":"Musique","text":"J'aime découvrir régulièrement de nouveaux artistes ou genres musicaux.","traits":{"novelty":1,"culture":0.5}},{"id":12,"domain":"Musique","text":"Je suis attiré par les morceaux puissants, denses ou très énergiques.","traits":{"intensity":1,"energy":1}},{"id":13,"domain":"Musique","text":"J'aime les musiques calmes, aérées ou minimalistes.","traits":{"energy":-1,"intensity":-0.5}},{"id":14,"domain":"Musique","text":"Je prête beaucoup d'attention à la production, aux timbres et aux détails sonores.","traits":{"sensory":1,"aesthetic":0.4}},{"id":15,"domain":"Musique","text":"J'apprécie les structures musicales complexes ou inattendues.","traits":{"structure":0.5,"novelty":0.6,"culture":0.4}},{"id":16,"domain":"Musique","text":"Un bon refrain immédiatement mémorisable est un vrai plus.","traits":{"culture":-1,"structure":0.3}},{"id":17,"domain":"Musique","text":"Je préfère écouter un album entier plutôt qu'une succession de morceaux isolés.","traits":{"structure":1,"energy":-0.2}},{"id":18,"domain":"Musique","text":"Les concerts et festivals font partie de mes manières préférées de vivre la musique.","traits":{"social":1,"energy":0.8}},{"id":19,"domain":"Musique","text":"J'aime chercher des artistes peu connus plutôt que rester sur les classements populaires.","traits":{"culture":1,"novelty":0.5}},{"id":20,"domain":"Musique","text":"J'aime créer des playlists très organisées selon une ambiance ou une activité.","traits":{"structure":1,"aesthetic":0.3}},{"id":21,"domain":"Cinéma & séries","text":"Je préfère un film qui me surprend à un film qui suit des codes familiers.","traits":{"novelty":1,"culture":0.4}},{"id":22,"domain":"Cinéma & séries","text":"J'aime les récits lents qui prennent le temps d'installer une atmosphère.","traits":{"energy":-1,"sensory":0.5}},{"id":23,"domain":"Cinéma & séries","text":"Les scènes spectaculaires et très intenses sont une part importante de mon plaisir.","traits":{"intensity":1,"energy":1}},{"id":24,"domain":"Cinéma & séries","text":"La photographie, les décors et la direction artistique comptent beaucoup pour moi.","traits":{"aesthetic":1,"sensory":0.5}},{"id":25,"domain":"Cinéma & séries","text":"J'aime les intrigues complexes qui demandent de rester attentif.","traits":{"structure":1,"culture":0.3}},{"id":26,"domain":"Cinéma & séries","text":"Je préfère les univers de fiction très développés aux récits très réalistes.","traits":{"creativity":1,"novelty":0.3}},{"id":27,"domain":"Cinéma & séries","text":"Je regarde volontiers les grosses sorties populaires dont tout le monde parle.","traits":{"culture":-1,"social":0.3}},{"id":28,"domain":"Cinéma & séries","text":"Je préfère souvent les films indépendants, d'auteur ou moins conventionnels.","traits":{"culture":1,"novelty":0.4}},{"id":29,"domain":"Cinéma & séries","text":"J'aime revoir plusieurs fois mes films ou séries favoris.","traits":{"novelty":-1,"structure":0.3}},{"id":30,"domain":"Cinéma & séries","text":"J'aime discuter longuement d'un film après l'avoir vu.","traits":{"social":1,"structure":0.2}},{"id":31,"domain":"Lecture & culture","text":"J'aime alterner entre fiction, essais, documentaires et formats très différents.","traits":{"novelty":1,"culture":0.5}},{"id":32,"domain":"Lecture & culture","text":"Je préfère les œuvres qui laissent une grande place à l'interprétation.","traits":{"creativity":1,"structure":-0.3}},{"id":33,"domain":"Lecture & culture","text":"Je suis attiré par les musées, expositions et lieux culturels.","traits":{"aesthetic":0.8,"culture":0.5}},{"id":34,"domain":"Lecture & culture","text":"J'aime approfondir un sujet jusqu'à en comprendre les détails.","traits":{"structure":1,"energy":-0.2}},{"id":35,"domain":"Lecture & culture","text":"Je préfère une narration claire et structurée à une forme expérimentale.","traits":{"structure":1,"novelty":-0.4}},{"id":36,"domain":"Lecture & culture","text":"Je lis ou regarde volontiers des œuvres issues d'autres pays et cultures.","traits":{"novelty":1,"culture":0.7}},{"id":37,"domain":"Lecture & culture","text":"J'aime collectionner des livres, éditions, affiches ou objets culturels.","traits":{"aesthetic":0.5,"structure":0.4}},{"id":38,"domain":"Lecture & culture","text":"Je préfère emprunter, lire en numérique ou éviter d'accumuler des objets.","traits":{"digital":0.6,"aesthetic":-0.2}},{"id":39,"domain":"Lecture & culture","text":"Les classiques me plaisent autant que les nouveautés.","traits":{"novelty":-0.2,"culture":-0.2}},{"id":40,"domain":"Lecture & culture","text":"J'aime recommander des œuvres et échanger des références avec d'autres personnes.","traits":{"social":1,"culture":0.2}},{"id":41,"domain":"Jeux & divertissement","text":"J'aime les jeux qui demandent de planifier plusieurs coups à l'avance.","traits":{"structure":1,"energy":-0.2}},{"id":42,"domain":"Jeux & divertissement","text":"Je préfère les jeux rapides et nerveux aux expériences très lentes.","traits":{"energy":1,"intensity":0.7}},{"id":43,"domain":"Jeux & divertissement","text":"Explorer librement un monde de jeu m'attire plus que suivre un chemin imposé.","traits":{"structure":-1,"novelty":0.7}},{"id":44,"domain":"Jeux & divertissement","text":"L'esthétique visuelle d'un jeu peut suffire à me donner envie d'y jouer.","traits":{"aesthetic":1,"sensory":0.4}},{"id":45,"domain":"Jeux & divertissement","text":"Je préfère jouer avec ou contre d'autres personnes plutôt que seul.","traits":{"social":1,"digital":0.2}},{"id":46,"domain":"Jeux & divertissement","text":"J'aime résoudre des énigmes, puzzles et problèmes logiques.","traits":{"structure":1}},{"id":47,"domain":"Jeux & divertissement","text":"Je suis attiré par les jeux étranges, expérimentaux ou difficiles à classer.","traits":{"novelty":1,"culture":0.7}},{"id":48,"domain":"Jeux & divertissement","text":"Je peux rejouer longtemps au même jeu si ses mécaniques me plaisent.","traits":{"novelty":-1,"structure":0.4}},{"id":49,"domain":"Jeux & divertissement","text":"Je préfère une expérience courte et marquante à un jeu extrêmement long.","traits":{"intensity":0.5,"structure":-0.3}},{"id":50,"domain":"Jeux & divertissement","text":"J'aime personnaliser mon personnage, mon espace ou mon équipement.","traits":{"aesthetic":0.8,"creativity":0.7}},{"id":51,"domain":"Voyage & environnement","text":"En voyage, j'aime avoir une grande part d'improvisation.","traits":{"structure":-1,"novelty":1}},{"id":52,"domain":"Voyage & environnement","text":"Je préfère préparer précisément les étapes, horaires et réservations.","traits":{"structure":1}},{"id":53,"domain":"Voyage & environnement","text":"Je choisis volontiers une destination pour ses paysages naturels.","traits":{"nature":1}},{"id":54,"domain":"Voyage & environnement","text":"Les grandes villes, l'architecture et la vie urbaine m'attirent fortement.","traits":{"nature":-1,"energy":0.5}},{"id":55,"domain":"Voyage & environnement","text":"J'aime sortir des itinéraires touristiques les plus connus.","traits":{"culture":1,"novelty":1}},{"id":56,"domain":"Voyage & environnement","text":"Je préfère le confort d'un hébergement très bien équipé à une expérience plus rustique.","traits":{"nature":-0.3,"intensity":-0.2}},{"id":57,"domain":"Voyage & environnement","text":"Marcher longtemps pour explorer un lieu me plaît.","traits":{"nature":0.7,"energy":0.5}},{"id":58,"domain":"Voyage & environnement","text":"J'aime les endroits silencieux, isolés ou peu fréquentés.","traits":{"social":-1,"energy":-1,"nature":0.8}},{"id":59,"domain":"Voyage & environnement","text":"Je préfère les lieux animés, avec beaucoup d'activités et de monde.","traits":{"social":1,"energy":1}},{"id":60,"domain":"Voyage & environnement","text":"Photographier et composer visuellement mes souvenirs de voyage est important pour moi.","traits":{"aesthetic":1,"digital":0.4}},{"id":61,"domain":"Esthétique & design","text":"Je remarque facilement les détails de typographie, de mise en page ou d'interface.","traits":{"aesthetic":1,"structure":0.5}},{"id":62,"domain":"Esthétique & design","text":"Je préfère généralement les objets sobres et minimalistes.","traits":{"sensory":-1,"aesthetic":0.6}},{"id":63,"domain":"Esthétique & design","text":"J'aime les couleurs fortes, contrastées ou inattendues.","traits":{"intensity":1,"sensory":0.8}},{"id":64,"domain":"Esthétique & design","text":"Je préfère une palette cohérente et limitée à beaucoup de couleurs différentes.","traits":{"structure":1,"intensity":-0.3}},{"id":65,"domain":"Esthétique & design","text":"Je choisis parfois un objet surtout parce qu'il est beau, même s'il existe une option plus pratique.","traits":{"aesthetic":1}},{"id":66,"domain":"Esthétique & design","text":"J'aime personnaliser mes espaces, vêtements ou objets.","traits":{"creativity":1,"aesthetic":0.8}},{"id":67,"domain":"Esthétique & design","text":"Je préfère les matières naturelles, textures brutes et objets qui vieillissent bien.","traits":{"nature":0.8,"sensory":0.5}},{"id":68,"domain":"Esthétique & design","text":"Les objets technologiques au design futuriste m'attirent.","traits":{"digital":1,"novelty":0.4}},{"id":69,"domain":"Esthétique & design","text":"Je préfère un style intemporel à des tendances très marquées.","traits":{"novelty":-0.5,"culture":-0.3}},{"id":70,"domain":"Esthétique & design","text":"J'aime mélanger des références, styles ou époques qui ne vont pas forcément ensemble.","traits":{"creativity":1,"novelty":0.7,"structure":-0.4}},{"id":71,"domain":"Vie sociale & rythme","text":"Je récupère surtout mon énergie en passant du temps seul.","traits":{"social":-1,"energy":-0.3}},{"id":72,"domain":"Vie sociale & rythme","text":"Les grandes soirées ou événements très animés peuvent être particulièrement agréables.","traits":{"social":1,"energy":1,"intensity":0.7}},{"id":73,"domain":"Vie sociale & rythme","text":"Je préfère souvent une discussion longue avec peu de personnes à un grand groupe.","traits":{"social":-0.4,"energy":-0.5}},{"id":74,"domain":"Vie sociale & rythme","text":"J'aime décider au dernier moment de sortir ou de faire quelque chose.","traits":{"structure":-1,"novelty":0.5}},{"id":75,"domain":"Vie sociale & rythme","text":"J'apprécie d'avoir des routines relativement stables.","traits":{"structure":1,"novelty":-0.5}},{"id":76,"domain":"Vie sociale & rythme","text":"Je préfère un week-end rempli d'activités à un week-end très calme.","traits":{"energy":1}},{"id":77,"domain":"Vie sociale & rythme","text":"J'aime recevoir des gens chez moi et organiser des moments collectifs.","traits":{"social":1,"structure":0.3}},{"id":78,"domain":"Vie sociale & rythme","text":"Je prends plaisir à fréquenter des lieux où je ne connais personne.","traits":{"social":0.6,"novelty":1}},{"id":79,"domain":"Vie sociale & rythme","text":"Je préfère approfondir quelques centres d'intérêt plutôt que multiplier les activités.","traits":{"structure":0.8,"novelty":-0.3}},{"id":80,"domain":"Vie sociale & rythme","text":"J'aime alterner périodes très actives et moments de retrait complet.","traits":{"energy":0.2,"structure":-0.4}},{"id":81,"domain":"Technologie & usages","text":"J'aime tester rapidement de nouveaux outils ou services numériques.","traits":{"digital":1,"novelty":1}},{"id":82,"domain":"Technologie & usages","text":"Je préfère un outil simple et stable à un outil puissant mais complexe.","traits":{"structure":0.4,"digital":-0.2}},{"id":83,"domain":"Technologie & usages","text":"J'aime automatiser les tâches répétitives quand c'est possible.","traits":{"digital":1,"structure":1}},{"id":84,"domain":"Technologie & usages","text":"Je prends plaisir à personnaliser finement les réglages d'une application.","traits":{"digital":0.8,"structure":0.8}},{"id":85,"domain":"Technologie & usages","text":"Je préfère parfois le papier, les boutons physiques ou les objets analogiques.","traits":{"digital":-1,"sensory":0.4}},{"id":86,"domain":"Technologie & usages","text":"Je suis attiré par les objets connectés, interfaces nouvelles ou expériences immersives.","traits":{"digital":1,"novelty":0.8,"sensory":0.4}},{"id":87,"domain":"Technologie & usages","text":"Je fais attention à l'esthétique et à la cohérence visuelle d'une interface.","traits":{"aesthetic":1,"digital":0.5}},{"id":88,"domain":"Technologie & usages","text":"J'aime comprendre comment fonctionne un outil plutôt que seulement l'utiliser.","traits":{"structure":1,"novelty":0.3}},{"id":89,"domain":"Technologie & usages","text":"Je préfère centraliser mes outils dans un système bien organisé.","traits":{"structure":1,"digital":0.6}},{"id":90,"domain":"Technologie & usages","text":"Je peux abandonner un outil performant si son ergonomie est mauvaise.","traits":{"aesthetic":0.7,"digital":0.3}},{"id":91,"domain":"Curiosité & expériences","text":"J'aime volontairement me confronter à des expériences nouvelles ou inhabituelles.","traits":{"novelty":1,"intensity":0.4}},{"id":92,"domain":"Curiosité & expériences","text":"Les sensations fortes peuvent être un vrai moteur de plaisir.","traits":{"intensity":1,"energy":1}},{"id":93,"domain":"Curiosité & expériences","text":"Je préfère généralement une ambiance douce à une stimulation très forte.","traits":{"intensity":-1,"energy":-0.6}},{"id":94,"domain":"Curiosité & expériences","text":"Je remarque facilement les odeurs, textures, lumières ou sons d'un environnement.","traits":{"sensory":1}},{"id":95,"domain":"Curiosité & expériences","text":"J'aime comparer mes impressions et mettre des mots précis sur ce que je ressens.","traits":{"sensory":0.8,"structure":0.5}},{"id":96,"domain":"Curiosité & expériences","text":"J'aime les activités créatives où il n'existe pas une seule bonne manière de faire.","traits":{"creativity":1,"structure":-1}},{"id":97,"domain":"Curiosité & expériences","text":"Je suis attiré par les expériences qui mélangent plusieurs sens ou médias.","traits":{"sensory":1,"novelty":0.7}},{"id":98,"domain":"Curiosité & expériences","text":"Je préfère savoir à quoi m'attendre avant de commencer une nouvelle activité.","traits":{"novelty":-1,"structure":1}},{"id":99,"domain":"Curiosité & expériences","text":"Je peux apprécier quelque chose précisément parce que c'est étrange, décalé ou déroutant.","traits":{"novelty":1,"culture":0.8}},{"id":100,"domain":"Curiosité & expériences","text":"J'aime construire des univers, concepts, projets ou collections très personnels.","traits":{"creativity":1,"aesthetic":0.5,"structure":0.3}}];
+
+const AXES = {
+  novelty:{name:"Nouveauté", left:"Repères", right:"Exploration"},
+  intensity:{name:"Intensité", left:"Douceur", right:"Intensité"},
+  structure:{name:"Structure", left:"Improvisation", right:"Structure"},
+  social:{name:"Sociabilité", left:"Solo", right:"Collectif"},
+  nature:{name:"Environnement", left:"Urbain", right:"Nature"},
+  aesthetic:{name:"Esthétique", left:"Fonction", right:"Esthétique"},
+  digital:{name:"Technologie", left:"Analogique", right:"Numérique"},
+  energy:{name:"Rythme", left:"Calme", right:"Énergie"},
+  culture:{name:"Culture", left:"Populaire", right:"Niche"},
+  sensory:{name:"Sensorialité", left:"Épuré", right:"Sensoriel"},
+  creativity:{name:"Créativité", left:"Cadre", right:"Création"}
+};
+
+const domains = [...new Set(QUESTIONS.map(q => q.domain))];
+let state = {
+  current: 0,
+  answers: {},
+  settings: {font:16, contrast:false, motion:false}
+};
+
+const LS_KEY = "gouts100_state_v1";
+
+function loadState(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(LS_KEY));
+    if(saved) state = {...state, ...saved, settings:{...state.settings,...(saved.settings||{})}};
+  }catch(e){}
+  applySettings();
+}
+function saveState(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); updateGlobalProgress(); }
+function answeredCount(){ return Object.keys(state.answers).filter(k => state.answers[k] != null).length; }
+
+function goToPage(id){
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active", p.id===id));
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active", b.dataset.page===id));
+  if(id==="quiz") renderQuestion();
+  if(id==="results") renderResults();
+  window.scrollTo({top:0,behavior:state.settings.motion?"auto":"smooth"});
+}
+
+document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>goToPage(b.dataset.page)));
+
+function renderDomains(){
+  document.getElementById("domainList").innerHTML = domains.map((d,i)=>`<div class="domain-pill">${String(i+1).padStart(2,"0")} - ${d}</div>`).join("");
+  document.getElementById("sectionProgress").innerHTML = domains.map((d,i)=>`<div class="section-seg" title="${d}"><span id="seg${i}"></span></div>`).join("");
+}
+
+function renderQuestion(){
+  const q = QUESTIONS[state.current];
+  document.getElementById("domainBadge").textContent = q.domain;
+  document.getElementById("qNumber").textContent = `Question ${String(q.id).padStart(2,"0")}`;
+  document.getElementById("questionText").textContent = q.text;
+  document.getElementById("quizCount").textContent = `Question ${q.id} / ${QUESTIONS.length}`;
+  document.querySelectorAll(".choice").forEach(btn=>{
+    btn.classList.toggle("selected", Number(btn.dataset.value)===state.answers[q.id]);
+  });
+  document.getElementById("prevBtn").disabled = state.current===0;
+  document.getElementById("nextBtn").textContent = state.current===QUESTIONS.length-1 ? "Voir mes résultats" : "Suivante";
+  updateSectionProgress();
+}
+
+function answer(value){
+  state.answers[QUESTIONS[state.current].id] = value;
+  saveState();
+  renderQuestion();
+  if(state.current < QUESTIONS.length-1){
+    setTimeout(()=>{ state.current++; saveState(); renderQuestion(); }, state.settings.motion ? 0 : 120);
+  } else {
+    renderResults();
+    goToPage("results");
+  }
+}
+
+document.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>answer(Number(btn.dataset.value))));
+document.getElementById("prevBtn").addEventListener("click",()=>{ if(state.current>0){state.current--;saveState();renderQuestion();}});
+document.getElementById("nextBtn").addEventListener("click",()=>{
+  if(state.current===QUESTIONS.length-1){ renderResults(); goToPage("results"); }
+  else { state.current++; saveState(); renderQuestion(); }
+});
+document.getElementById("skipBtn").addEventListener("click",()=>{
+  delete state.answers[QUESTIONS[state.current].id];
+  if(state.current < QUESTIONS.length-1) state.current++;
+  saveState(); renderQuestion();
+});
+
+document.addEventListener("keydown",e=>{
+  if(!document.getElementById("quiz").classList.contains("active")) return;
+  if(["1","2","3","4","5"].includes(e.key)) answer(Number(e.key));
+  if(e.key==="ArrowLeft" && state.current>0){state.current--;saveState();renderQuestion();}
+  if(e.key==="ArrowRight" && state.current<QUESTIONS.length-1){state.current++;saveState();renderQuestion();}
+});
+
+function updateGlobalProgress(){
+  const n = answeredCount();
+  document.getElementById("sideProgressText").textContent = `${n} / 100`;
+  document.getElementById("sideProgressFill").style.width = `${n}%`;
+  document.getElementById("continueBtn").style.display = n ? "inline-block" : "none";
+}
+function updateSectionProgress(){
+  domains.forEach((d,i)=>{
+    const items = QUESTIONS.filter(q=>q.domain===d);
+    const done = items.filter(q=>state.answers[q.id] != null).length;
+    document.getElementById(`seg${i}`).style.width = `${done/items.length*100}%`;
+  });
+}
+
+function compute(){
+  const axisSums={}, axisWeights={}, domainSums={}, domainCounts={};
+  Object.keys(AXES).forEach(k=>{axisSums[k]=0;axisWeights[k]=0});
+  domains.forEach(d=>{domainSums[d]=0;domainCounts[d]=0});
+
+  QUESTIONS.forEach(q=>{
+    const a = state.answers[q.id];
+    if(a == null) return;
+    const norm = (a-3)/2;
+    domainSums[q.domain]+=a;
+    domainCounts[q.domain]++;
+    Object.entries(q.traits).forEach(([axis,w])=>{
+      axisSums[axis]+=norm*w;
+      axisWeights[axis]+=Math.abs(w);
+    });
+  });
+
+  const axes={};
+  Object.keys(AXES).forEach(k=>{
+    axes[k]=axisWeights[k] ? Math.max(-1,Math.min(1,axisSums[k]/axisWeights[k])) : 0;
+  });
+  const domainScores={};
+  domains.forEach(d=>{
+    domainScores[d]=domainCounts[d] ? ((domainSums[d]/domainCounts[d]-1)/4)*100 : 0;
+  });
+  return {axes,domainScores};
+}
+
+function pctFromAxis(v){ return Math.round((v+1)*50); }
+
+function profileName(axes){
+  const ranked = Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+  const [a,b,c] = ranked.slice(0,3);
+
+  const nouns = {
+    novelty:["Gardien","Explorateur"],
+    intensity:["Nuance","Intense"],
+    structure:["Improvisateur","Architecte"],
+    social:["Indépendant","Collectif"],
+    nature:["Urbain","Naturaliste"],
+    aesthetic:["Pragmatique","Esthète"],
+    digital:["Analogique","Numérique"],
+    energy:["Contemplatif","Dynamique"],
+    culture:["Grand public","Curateur"],
+    sensory:["Épuré","Sensoriel"],
+    creativity:["Classique","Créatif"]
+  };
+  const pick = ([k,v]) => nouns[k][v>=0?1:0];
+  const first = pick(a);
+  const second = pick(b).toLowerCase();
+  return `${first} ${second}`;
+}
+
+function profileText(axes, domainScores){
+  const sortedAxes = Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,4);
+  const domainSorted = Object.entries(domainScores).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const phrase = sortedAxes.map(([k,v])=>{
+    const meta=AXES[k], strength=Math.abs(v);
+    const pole=v>=0?meta.right:meta.left;
+    const adv = strength>.55 ? "nettement" : strength>.3 ? "modérément" : "légèrement";
+    return `${adv} orienté vers ${pole.toLowerCase()}`;
+  });
+  return `Votre profil est surtout ${phrase[0]}, puis ${phrase[1]}. Une tendance supplémentaire apparaît vers ${phrase[2]}. Vos domaines d'affinité les plus élevés sont ${domainSorted.map(x=>x[0].toLowerCase()).join(", ")}. Cette synthèse décrit vos réponses actuelles : elle n'implique ni stabilité dans le temps, ni catégorie psychologique fixe.`;
+}
+
+function renderResults(){
+  const n = answeredCount();
+  const enough = n>=20;
+  document.getElementById("resultsContent").hidden = !enough;
+  document.getElementById("emptyResults").hidden = enough;
+  document.getElementById("resultIntro").textContent = enough
+    ? `${n} réponses prises en compte${n<100 ? " - le profil reste partiel tant que le test n'est pas complété." : " - cartographie complète."}`
+    : "Répondez à au moins 20 questions pour générer un premier profil.";
+
+  if(!enough) return;
+  const {axes,domainScores}=compute();
+  document.getElementById("profileTitle").textContent = profileName(axes);
+  document.getElementById("profileCopy").textContent = profileText(axes,domainScores);
+
+  document.getElementById("axisResults").innerHTML = Object.entries(axes).map(([k,v])=>{
+    const m=AXES[k], p=pctFromAxis(v), right=v>=0;
+    const width=Math.abs(p-50)*2;
+    const left=right?50:p;
+    const label = `${v>=0?m.right:m.left} ${Math.round(Math.abs(v)*100)}%`;
+    return `<div class="axis-row">
+      <div class="axis-name">${m.name}</div>
+      <div class="axis-bar">
+        <span class="axis-zero"></span>
+        <span class="axis-value" style="left:${left}%;width:${width/2}%"></span>
+      </div>
+      <div class="axis-label">${label}</div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("domainResults").innerHTML = Object.entries(domainScores)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([d,s])=>`<div class="domain-score">
+      <div class="top"><span>${d}</span><b>${Math.round(s)} / 100</b></div>
+      <div class="bar"><span style="width:${s}%"></span></div>
+    </div>`).join("");
+
+  const answered = QUESTIONS.filter(q=>state.answers[q.id]!=null)
+    .map(q=>({...q,answer:state.answers[q.id]}));
+  const likes=[...answered].sort((a,b)=>b.answer-a.answer || a.id-b.id).slice(0,5);
+  const dislikes=[...answered].sort((a,b)=>a.answer-b.answer || a.id-b.id).slice(0,5);
+  document.getElementById("topLikes").innerHTML=likes.map(q=>`<div class="top-item">${q.text}<small>${q.domain} - ${q.answer}/5</small></div>`).join("");
+  document.getElementById("topDislikes").innerHTML=dislikes.map(q=>`<div class="top-item">${q.text}<small>${q.domain} - ${q.answer}/5</small></div>`).join("");
+  drawRadar(axes);
+}
+
+function drawRadar(axes){
+  const canvas=document.getElementById("radar");
+  const ctx=canvas.getContext("2d");
+  const keys=Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,8);
+  const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,R=165;
+  ctx.clearRect(0,0,W,H);
+  const fg=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#72d49b";
+  const line=getComputedStyle(document.documentElement).getPropertyValue("--line").trim()||"#252b27";
+  const text=getComputedStyle(document.documentElement).getPropertyValue("--muted").trim()||"#aaa99f";
+  for(let ring=1;ring<=4;ring++){
+    ctx.beginPath();
+    keys.forEach((_,i)=>{
+      const a=-Math.PI/2+i*2*Math.PI/keys.length;
+      const r=R*ring/4;
+      const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    });
+    ctx.closePath();ctx.strokeStyle=line;ctx.lineWidth=1;ctx.stroke();
+  }
+  keys.forEach((_,i)=>{
+    const a=-Math.PI/2+i*2*Math.PI/keys.length;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.strokeStyle=line;ctx.stroke();
+  });
+  ctx.beginPath();
+  keys.forEach(([k,v],i)=>{
+    const a=-Math.PI/2+i*2*Math.PI/keys.length;
+    const r=R*(.22+.78*Math.abs(v));
+    const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  });
+  ctx.closePath();ctx.fillStyle=fg+"2e";ctx.fill();ctx.strokeStyle=fg;ctx.lineWidth=3;ctx.stroke();
+  ctx.fillStyle=text;ctx.font="13px Inter, sans-serif";ctx.textAlign="center";
+  keys.forEach(([k,v],i)=>{
+    const a=-Math.PI/2+i*2*Math.PI/keys.length;
+    const r=R+34;
+    const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r+4;
+    ctx.fillText(v>=0?AXES[k].right:AXES[k].left,x,y);
+  });
+}
+
+function exportData(){
+  const computed=compute();
+  const payload={
+    app:"Goûts 100",
+    exportedAt:new Date().toISOString(),
+    answered:answeredCount(),
+    profile:profileName(computed.axes),
+    axes:computed.axes,
+    domains:computed.domainScores,
+    answers:QUESTIONS.map(q=>({id:q.id,domain:q.domain,question:q.text,answer:state.answers[q.id]??null}))
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="gouts-100-resultats.json";a.click();
+  URL.revokeObjectURL(url);
+  toast("Export JSON créé");
+}
+
+function summaryText(){
+  const {axes,domainScores}=compute();
+  const topAxes=Object.entries(axes).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,4)
+    .map(([k,v])=>`${AXES[k].name}: ${v>=0?AXES[k].right:AXES[k].left} (${Math.round(Math.abs(v)*100)}%)`);
+  const topDomains=Object.entries(domainScores).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([d,s])=>`${d} (${Math.round(s)}/100)`);
+  return `Goûts 100 - ${profileName(axes)}\n${topAxes.join("\n")}\nDomaines principaux: ${topDomains.join(", ")}\n${profileText(axes,domainScores)}`;
+}
+
+document.getElementById("copyBtn").addEventListener("click",async()=>{
+  try{await navigator.clipboard.writeText(summaryText());toast("Résumé copié");}
+  catch(e){toast("Copie non disponible dans ce navigateur");}
+});
+document.getElementById("downloadBtn").addEventListener("click",exportData);
+document.getElementById("restartBtn").addEventListener("click",()=>{
+  if(confirm("Effacer toutes les réponses et recommencer ?")){
+    state.current=0;state.answers={};saveState();renderQuestion();goToPage("quiz");
+  }
+});
+
+document.getElementById("startBtn").addEventListener("click",()=>{state.current=0;saveState();goToPage("quiz")});
+document.getElementById("continueBtn").addEventListener("click",()=>goToPage("quiz"));
+document.getElementById("resumeBtn").addEventListener("click",()=>goToPage("quiz"));
+
+const modal=document.getElementById("settingsModal");
+document.getElementById("settingsBtn").addEventListener("click",()=>{modal.classList.add("open");modal.setAttribute("aria-hidden","false")});
+document.getElementById("closeSettings").addEventListener("click",closeSettings);
+modal.addEventListener("click",e=>{if(e.target===modal)closeSettings()});
+function closeSettings(){modal.classList.remove("open");modal.setAttribute("aria-hidden","true")}
+
+document.getElementById("fontDown").addEventListener("click",()=>{state.settings.font=Math.max(14,state.settings.font-1);applySettings();saveState()});
+document.getElementById("fontUp").addEventListener("click",()=>{state.settings.font=Math.min(20,state.settings.font+1);applySettings();saveState()});
+document.getElementById("contrastSwitch").addEventListener("click",()=>{state.settings.contrast=!state.settings.contrast;applySettings();saveState()});
+document.getElementById("motionSwitch").addEventListener("click",()=>{state.settings.motion=!state.settings.motion;applySettings();saveState()});
+
+function applySettings(){
+  document.documentElement.style.setProperty("--fs",`${state.settings.font}px`);
+  document.body.classList.toggle("high-contrast",!!state.settings.contrast);
+  document.body.classList.toggle("reduce-motion",!!state.settings.motion);
+  document.getElementById("contrastSwitch")?.classList.toggle("on",!!state.settings.contrast);
+  document.getElementById("motionSwitch")?.classList.toggle("on",!!state.settings.motion);
+}
+
+function toast(msg){
+  const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),1800);
+}
+
+window.addEventListener("resize",()=>{if(!document.getElementById("resultsContent").hidden)renderResults()});
+
+loadState();
+renderDomains();
+updateGlobalProgress();
+renderQuestion();
+</script>
+</body>
+</html>
